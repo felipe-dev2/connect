@@ -33,7 +33,7 @@ class DesktopHomePage extends StatefulWidget {
   State<DesktopHomePage> createState() => _DesktopHomePageState();
 }
 
-const borderColor = Color(0xFF2F65BA);
+const borderColor = Color(0xFF232A23);
 
 class _DesktopHomePageState extends State<DesktopHomePage>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
@@ -606,12 +606,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               0, marginTop, 0, bind.isIncomingOnly() ? marginTop : 0),
           child: Container(
               decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+                  border: Border.all(color: MyTheme.hairline, width: 1),
                   gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: [
-                  Color.fromARGB(255, 226, 66, 188),
-                  Color.fromARGB(255, 244, 114, 124),
+                  Color(0xFF20301A),
+                  Color(0xFF141814),
                 ],
               )),
               padding: EdgeInsets.all(20),
@@ -1068,12 +1070,12 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
                           e.name,
                           style: TextStyle(
                               color: checked
-                                  ? const Color(0xFF0A9471)
-                                  : Color.fromARGB(255, 198, 86, 157)),
+                                  ? const Color(0xFF7BB843)
+                                  : const Color(0xFF69706A)),
                         ),
                         backgroundColor: checked
-                            ? const Color(0xFFD0F7ED)
-                            : Color.fromARGB(255, 247, 205, 232));
+                            ? const Color(0xFF1E241E)
+                            : const Color(0xFF171D17));
                   }).toList(),
                 ))
           ],

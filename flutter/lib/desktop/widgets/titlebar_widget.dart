@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-const sidebarColor = Color(0xFF0C6AF6);
-const backgroundStartColor = Color(0xFF0583EA);
-const backgroundEndColor = Color(0xFF0697EA);
+const sidebarColor = Color(0xFF7BB843);
+const backgroundStartColor = Color(0xFF0A0C0A);
+const backgroundEndColor = Color(0xFF101410);
 
 class DesktopTitleBar extends StatelessWidget {
   final Widget? child;

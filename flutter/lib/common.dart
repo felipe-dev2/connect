@@ -183,17 +183,17 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
   );
 
   static final dark = ColorThemeExtension(
-    border: Color(0xFF555555),
-    border2: Color(0xFFE5E5E5),
-    border3: Colors.white24,
-    highlight: Color(0xFF3F3F3F),
-    drag_indicator: Colors.grey,
-    shadow: Colors.grey,
-    errorBannerBg: Color(0xFF470F2D),
-    me: Colors.greenAccent,
-    toastBg: Colors.white.withOpacity(0.6),
-    toastText: Colors.black,
-    divider: Colors.white38,
+    border: Color(0xFF2A322A),
+    border2: Color(0xFF3A423A),
+    border3: Colors.white.withOpacity(0.08),
+    highlight: Color(0xFF171D17),
+    drag_indicator: Color(0xFF69706A),
+    shadow: Colors.black,
+    errorBannerBg: Color(0xFF2A1416),
+    me: Color(0xFF7BB843),
+    toastBg: Color(0xFF1E241E),
+    toastText: Colors.white,
+    divider: Color(0xFF232A23),
   );
 
   @override
@@ -262,6 +262,24 @@ class MyTheme {
   static const Color dark = Colors.black87;
   static const Color button = Color(0xFF7BB843);
   static const Color hoverBorder = Color(0xFF999999);
+
+  // === PCNET-IT Dark Tech Premium — sistema de design ===
+  static const Color bg = Color(0xFF0A0C0A); // fundo base
+  static const Color surface = Color(0xFF101410); // superfície / card
+  static const Color surface2 = Color(0xFF171D17); // superfície elevada
+  static const Color hairline = Color(0xFF232A23); // borda subtil 1px
+  static const Color green = Color(0xFF7BB843); // verde marca
+  static const Color greenBright = Color(0xFF9BE04A); // hover / glow / foco
+  static const Color greenDark = Color(0xFF3E5C29); // pressed / estado
+  static const Color textPrimary = Color(0xFFF3F6F3);
+  static const Color textSecondary = Color(0xFFA6AEA6);
+  static const Color textMuted = Color(0xFF69706A);
+  static const Color danger = Color(0xFFE5484D);
+  static const double radiusSm = 8; // elementos pequenos
+  static const double radiusMd = 12; // inputs / botões
+  static const double radiusLg = 16; // cards
+  static const String fontSans = 'Inter';
+  static const String fontMono = 'JetBrainsMono';
 
   // ListTile
   static const ListTileThemeData listTileTheme = ListTileThemeData(
@@ -375,6 +393,7 @@ class MyTheme {
     // https://stackoverflow.com/questions/77537315/after-upgrading-to-flutter-3-16-the-app-bar-background-color-button-size-and
     useMaterial3: false,
     brightness: Brightness.light,
+    fontFamily: fontSans,
     hoverColor: Color.fromARGB(255, 224, 224, 224),
     scaffoldBackgroundColor: Colors.white,
     dialogBackgroundColor: Colors.white,
@@ -473,30 +492,41 @@ class MyTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
-    hoverColor: Color.fromARGB(255, 28, 40, 28),
-    scaffoldBackgroundColor: Color(0xFF0A0C0A),
-    dialogBackgroundColor: Color(0xFF0A0C0A),
+    fontFamily: fontSans,
+    hoverColor: greenDark.withOpacity(0.18),
+    scaffoldBackgroundColor: bg,
+    dialogBackgroundColor: surface,
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
     ),
     dialogTheme: DialogTheme(
       elevation: 15,
+      backgroundColor: surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18.0),
+        borderRadius: BorderRadius.circular(radiusLg),
         side: BorderSide(
           width: 1,
-          color: Color(0xFF161A16),
+          color: hairline,
         ),
       ),
     ),
     scrollbarTheme: scrollbarThemeDark,
     inputDecorationTheme: (isDesktop || isWebDesktop)
         ? InputDecorationTheme(
-            fillColor: Color(0xFF161A16),
+            fillColor: surface2,
             filled: true,
             isDense: true,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(radiusMd),
+              borderSide: BorderSide(color: hairline, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(radiusMd),
+              borderSide: BorderSide(color: green, width: 1.5),
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(radiusMd),
+              borderSide: BorderSide(color: hairline, width: 1),
             ),
           )
         : null,
@@ -511,7 +541,7 @@ class MyTheme {
         color: accent80,
       ),
     ),
-    cardColor: Color(0xFF161A16),
+    cardColor: surface,
     visualDensity: VisualDensity.adaptivePlatformDensity,
     tabBarTheme: const TabBarTheme(
       labelColor: Colors.white70,
@@ -534,23 +564,28 @@ class MyTheme {
         : mobileTextButtonTheme,
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MyTheme.accent,
-        foregroundColor: Colors.white,
-        disabledForegroundColor: Colors.white70,
-        disabledBackgroundColor: Colors.white10,
+        backgroundColor: green,
+        foregroundColor: const Color(0xFF0A0C0A),
+        disabledForegroundColor: textMuted,
+        disabledBackgroundColor: surface2,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        textStyle: const TextStyle(
+            fontWeight: FontWeight.w600, fontFamily: fontSans),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(radiusMd),
         ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: Color(0xFF161A16),
-        side: BorderSide(color: Colors.white12, width: 0.5),
-        disabledForegroundColor: Colors.white70,
-        foregroundColor: Colors.white70,
+        backgroundColor: surface2,
+        side: const BorderSide(color: hairline, width: 1),
+        disabledForegroundColor: textMuted,
+        foregroundColor: textPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(radiusMd),
         ),
       ),
     ),
@@ -560,16 +595,18 @@ class MyTheme {
     listTileTheme: listTileTheme,
     menuBarTheme: MenuBarThemeData(
         style: MenuStyle(
-            backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
+            backgroundColor: MaterialStatePropertyAll(surface))),
     colorScheme: ColorScheme.dark(
-      primary: Colors.blue,
-      secondary: accent,
-      background: Color(0xFF161A16),
+      primary: green,
+      secondary: greenBright,
+      background: surface,
+      surface: surface,
     ),
     popupMenuTheme: PopupMenuThemeData(
+        color: surface2,
         shape: RoundedRectangleBorder(
-      side: BorderSide(color: Colors.white24),
-      borderRadius: BorderRadius.all(Radius.circular(8.0)),
+      side: BorderSide(color: hairline),
+      borderRadius: BorderRadius.all(Radius.circular(radiusMd)),
     )),
   ).copyWith(
     extensions: <ThemeExtension<dynamic>>[

@@ -52,21 +52,26 @@ class _ButtonState extends State<Button> {
                 padding: EdgeInsets.all(widget.padding ?? 4.5),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: pressed.value
-                      ? MyTheme.accent
-                      : (widget.isOutline
-                          ? Colors.transparent
-                          : MyTheme.button),
+                  color: widget.isOutline
+                      ? (hover.value
+                          ? MyTheme.greenDark.withOpacity(0.25)
+                          : Colors.transparent)
+                      : (pressed.value
+                          ? MyTheme.greenDark
+                          : (hover.value
+                              ? MyTheme.greenBright
+                              : MyTheme.green)),
                   border: Border.all(
-                    color: pressed.value
-                        ? MyTheme.accent
-                        : hover.value
-                            ? MyTheme.hoverBorder
-                            : (widget.isOutline
-                                ? widget.borderColor ?? MyTheme.border
-                                : MyTheme.button),
+                    color: widget.isOutline
+                        ? (hover.value
+                            ? MyTheme.green
+                            : widget.borderColor ?? MyTheme.hairline)
+                        : (hover.value
+                            ? MyTheme.greenBright
+                            : MyTheme.green),
                   ),
-                  borderRadius: BorderRadius.circular(widget.radius ?? 5),
+                  borderRadius:
+                      BorderRadius.circular(widget.radius ?? MyTheme.radiusSm),
                 ),
                 child: Text(
                   translate(
@@ -74,10 +79,10 @@ class _ButtonState extends State<Button> {
                   ),
                   style: TextStyle(
                       fontSize: widget.textSize ?? 12.0,
+                      fontWeight: FontWeight.w600,
                       color: widget.isOutline
-                          ? widget.textColor ??
-                              Theme.of(context).textTheme.titleLarge?.color
-                          : Colors.white),
+                          ? widget.textColor ?? MyTheme.textPrimary
+                          : const Color(0xFF0A0C0A)),
                 ).marginSymmetric(horizontal: 12),
               )),
         ));
@@ -131,19 +136,22 @@ class _FixedWidthButtonState extends State<FixedWidthButton> {
             padding: EdgeInsets.all(widget.padding ?? 4.5),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: pressed.value
-                  ? MyTheme.accent
-                  : (widget.isOutline ? Colors.transparent : MyTheme.button),
+              color: widget.isOutline
+                  ? (hover.value
+                      ? MyTheme.greenDark.withOpacity(0.25)
+                      : Colors.transparent)
+                  : (pressed.value
+                      ? MyTheme.greenDark
+                      : (hover.value ? MyTheme.greenBright : MyTheme.green)),
               border: Border.all(
-                color: pressed.value
-                    ? MyTheme.accent
-                    : hover.value
-                        ? MyTheme.hoverBorder
-                        : (widget.isOutline
-                            ? widget.borderColor ?? MyTheme.border
-                            : MyTheme.button),
+                color: widget.isOutline
+                    ? (hover.value
+                        ? MyTheme.green
+                        : widget.borderColor ?? MyTheme.hairline)
+                    : (hover.value ? MyTheme.greenBright : MyTheme.green),
               ),
-              borderRadius: BorderRadius.circular(widget.radius ?? 5),
+              borderRadius:
+                  BorderRadius.circular(widget.radius ?? MyTheme.radiusSm),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -157,10 +165,10 @@ class _FixedWidthButtonState extends State<FixedWidthButton> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: widget.textSize ?? 12.0,
+                        fontWeight: FontWeight.w600,
                         color: widget.isOutline
-                            ? widget.textColor ??
-                                Theme.of(context).textTheme.titleLarge?.color
-                            : Colors.white),
+                            ? widget.textColor ?? MyTheme.textPrimary
+                            : const Color(0xFF0A0C0A)),
                   ).marginSymmetric(horizontal: 12),
                 ),
               ],
