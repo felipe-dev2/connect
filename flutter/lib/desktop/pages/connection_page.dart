@@ -319,7 +319,7 @@ class _ConnectionPageState extends State<ConnectionPage>
             // área de dispositivos ("Acessos Recentes") num card próprio
             Expanded(
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 1120),
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: MyTheme.surface,
                   borderRadius: BorderRadius.circular(MyTheme.radiusLg),
@@ -640,8 +640,7 @@ class _ConnectionPageState extends State<ConnectionPage>
         ),
       ),
     );
-    return Container(
-        constraints: const BoxConstraints(maxWidth: 1120), child: w);
+    return w;
   }
 
   /// Cabeçalho do card de ligação: título, descrição e badge de estado.
