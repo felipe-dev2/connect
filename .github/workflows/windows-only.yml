@@ -1,0 +1,17 @@
+name: Build Windows (PCNET-IT Connect)
+
+# Build rápido só de Windows, para iterar sem esperar por
+# Android/Linux/macOS/iOS. Reutiliza o pipeline oficial com o
+# interruptor `windows_only`.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: "nightly"
+      windows_only: true

@@ -2436,7 +2436,6 @@ class _AboutState extends State<_About> {
       final version = data['version'].toString();
       final buildDate = data['buildDate'].toString();
       final fingerprint = data['fingerprint'].toString();
-      const linkStyle = TextStyle(decoration: TextDecoration.underline);
       final scrollController = ScrollController();
       return SingleChildScrollView(
         controller: scrollController,
@@ -2444,58 +2443,108 @@ class _AboutState extends State<_About> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                height: 8.0,
-              ),
-              SelectionArea(
-                  child: Text('${translate('Version')}: $version')
-                      .marginSymmetric(vertical: 4.0)),
-              SelectionArea(
-                  child: Text('${translate('Build Date')}: $buildDate')
-                      .marginSymmetric(vertical: 4.0)),
-              if (!isWeb)
-                SelectionArea(
-                    child: Text('${translate('Fingerprint')}: $fingerprint')
-                        .marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    launchUrlString('https://www.pcnet-it.com.br');
-                  },
-                  child: Text(
-                    translate('Privacy Statement'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    launchUrlString('https://www.pcnet-it.com.br');
-                  },
-                  child: Text(
-                    translate('Website'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
-              Container(
-                decoration: const BoxDecoration(color: Color(0xFF7BB843)),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-                child: SelectionArea(
-                    child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'PCNET-IT ${DateTime.now().toString().substring(0, 4)}',
-                            style: const TextStyle(color: Colors.white),
-                          )
-                        ],
-                      ),
+              const SizedBox(height: 6.0),
+              // identidade: logo + nome + versão
+              Row(
+                children: [
+                  Container(
+                    width: 62,
+                    height: 62,
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: MyTheme.surface2,
+                      borderRadius: BorderRadius.circular(MyTheme.radiusMd),
+                      border: Border.all(color: MyTheme.hairline),
                     ),
-                  ],
-                )),
-              ).marginSymmetric(vertical: 4.0)
+                    child: loadIcon(44),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bind.mainGetAppNameSync(),
+                          style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: MyTheme.textPrimary),
+                        ),
+                        const SizedBox(height: 3),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: MyTheme.greenDark.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: MyTheme.hairline),
+                          ),
+                          child: Text(
+                            'v$version',
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: MyTheme.fontMono,
+                                fontWeight: FontWeight.w500,
+                                color: MyTheme.green),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Container(height: 1, color: MyTheme.hairline),
+              const SizedBox(height: 14),
+              // metadados
+              _aboutInfoRow(
+                  Icons.event_outlined, translate('Build Date'), buildDate),
+              if (!isWeb)
+                _aboutInfoRow(Icons.fingerprint, translate('Fingerprint'),
+                    fingerprint,
+                    mono: true),
+              const SizedBox(height: 8),
+              Container(height: 1, color: MyTheme.hairline),
+              const SizedBox(height: 12),
+              // links
+              _aboutLink(Icons.shield_outlined,
+                  translate('Privacy Statement'), 'https://www.pcnet-it.com.br'),
+              _aboutLink(Icons.language_outlined, translate('Website'),
+                  'https://www.pcnet-it.com.br'),
+              const SizedBox(height: 14),
+              // rodapé de marca
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(MyTheme.radiusMd),
+                  border: Border.all(color: MyTheme.hairline),
+                  gradient: const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [Color(0xFF20301A), Color(0xFF141814)],
+                  ),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                child: SelectionArea(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.copyright_outlined,
+                          size: 15, color: MyTheme.green),
+                      const SizedBox(width: 8),
+                      Text(
+                        'PCNET-IT ${DateTime.now().toString().substring(0, 4)}',
+                        style: const TextStyle(
+                            color: MyTheme.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ).marginOnly(bottom: 4)
             ],
-          ).marginOnly(left: _kContentHMargin)
+          ).marginOnly(left: _kContentHMargin, right: _kContentHMargin)
         ]),
       );
     });
@@ -2507,6 +2556,74 @@ class _AboutState extends State<_About> {
 //#region components
 
 // ignore: non_constant_identifier_names
+/// Linha de metadado da aba "Sobre": ícone + rótulo + valor.
+Widget _aboutInfoRow(IconData icon, String label, String value,
+    {bool mono = false}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: MyTheme.textMuted),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                    fontSize: 11,
+                    color: MyTheme.textMuted,
+                    letterSpacing: 0.6),
+              ),
+              const SizedBox(height: 2),
+              SelectionArea(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: mono ? 11 : 13,
+                    height: 1.4,
+                    fontFamily: mono ? MyTheme.fontMono : null,
+                    color: MyTheme.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Link com ícone da aba "Sobre".
+Widget _aboutLink(IconData icon, String label, String url) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: InkWell(
+      onTap: () => launchUrlString(url),
+      borderRadius: BorderRadius.circular(MyTheme.radiusSm),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: MyTheme.green),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: MyTheme.green,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 5),
+          const Icon(Icons.open_in_new, size: 13, color: MyTheme.green),
+        ],
+      ),
+    ),
+  );
+}
+
 Widget _Card(
     {required String title,
     required List<Widget> children,
