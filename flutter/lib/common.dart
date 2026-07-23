@@ -3182,6 +3182,11 @@ Future<void> start_service(bool is_start) async {
 }
 
 Future<bool> canBeBlocked() async {
+  // PCNET-IT: ferramenta de suporte interno — os técnicos precisam de aceder às
+  // Configurações da máquina remota durante a sessão. Desativa o overlay de
+  // bloqueio (que escurecia a home ao passar o rato e impedia cliques).
+  return false;
+  // ignore: dead_code
   if (isWeb) {
     // Web can only act as a controller, never as a controlled side,
     // so it should never be blocked by a remote session.

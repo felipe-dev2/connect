@@ -2370,7 +2370,10 @@ impl UserDefaultConfig {
                 self.get_string(key, "scrollauto", vec!["scrolledge", "scrollbar"])
             }
             keys::OPTION_IMAGE_QUALITY => {
-                self.get_string(key, "balanced", vec!["best", "low", "custom"])
+                // PCNET-IT: imagem mais nítida por defeito. Com bitrate adaptativo (ABR,
+                // ligado por defeito) a nitidez sobe quando a rede permite e escala em
+                // redes fracas — mais qualidade sem acumular delay.
+                self.get_string(key, "best", vec!["balanced", "low", "custom"])
             }
             keys::OPTION_CODEC_PREFERENCE => {
                 self.get_string(key, "auto", vec!["vp8", "vp9", "av1", "h264", "h265"])

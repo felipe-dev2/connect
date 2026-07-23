@@ -2031,7 +2031,10 @@ pub fn create_symmetric_key_msg(their_pk_b: [u8; 32]) -> (Bytes, Bytes, secretbo
 
 #[inline]
 pub fn using_public_server() -> bool {
-    crate::get_custom_rendezvous_server(get_option("custom-rendezvous-server")).is_empty()
+    // PCNET-IT: o servidor próprio está embutido no build (RENDEZVOUS_SERVERS),
+    // por isso nunca usamos o servidor público do RustDesk. Evita a mensagem
+    // enganosa "configure seu próprio servidor" na barra de estado.
+    false
 }
 
 pub struct ThrottledInterval {
