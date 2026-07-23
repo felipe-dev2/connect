@@ -96,8 +96,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.carriez.flutter_hbb"
+        // PCNET-IT Connect: applicationId próprio (evita conflito com o RustDesk oficial,
+        // que impedia a instalação do APK por colisão de package + assinatura diferente)
+        applicationId "br.com.pcnetit.connect"
         minSdkVersion 22
         targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()

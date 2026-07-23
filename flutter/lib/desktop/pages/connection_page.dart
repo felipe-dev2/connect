@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_hbb/common/widgets/connection_page_title.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/popup_menu.dart';
@@ -313,13 +314,23 @@ class _ConnectionPageState extends State<ConnectionPage>
               children: [
                 Flexible(child: _buildRemoteIDTextField(context)),
               ],
-            ).marginOnly(top: 22),
-            SizedBox(height: 12),
-            Divider().paddingOnly(right: 12),
-            Expanded(child: PeerTabPage()),
+            ),
+            const SizedBox(height: 14),
+            // área de dispositivos ("Acessos Recentes") num card próprio
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1120),
+                decoration: BoxDecoration(
+                  color: MyTheme.surface,
+                  borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+                  border: Border.all(color: MyTheme.hairline, width: 1),
+                ),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+                child: PeerTabPage(),
+              ),
+            ),
           ],
-        ).paddingOnly(left: 12.0)),
-        if (!isOutgoingOnly) const Divider(height: 1),
+        ).paddingOnly(left: 14, right: 14, top: 14, bottom: 8)),
         if (!isOutgoingOnly) OnlineStatusWidget()
       ],
     );
@@ -342,16 +353,22 @@ class _ConnectionPageState extends State<ConnectionPage>
   /// Search for a peer.
   Widget _buildRemoteIDTextField(BuildContext context) {
     var w = Container(
-      width: 320 + 20 * 2,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
       decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(13)),
-          border: Border.all(color: Theme.of(context).colorScheme.background)),
+          color: MyTheme.surface,
+          borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+          border: Border.all(color: MyTheme.hairline, width: 1)),
       child: Ink(
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            getConnectionPageTitle(context, false).marginOnly(bottom: 15),
-            Row(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildConnectHeader(context),
+                  const SizedBox(height: 16),
+                  Row(
               children: [
                 Expanded(
                     child: RawAutocomplete<Peer>(
@@ -606,11 +623,81 @@ class _ConnectionPageState extends State<ConnectionPage>
                 ),
               ]),
             ),
+                ],
+              ),
+            ),
+            // ilustração hero (oculta em janelas estreitas)
+            if (MediaQuery.of(context).size.width > 1000)
+              Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: SvgPicture.asset(
+                  'assets/pcnet_hero_connect.svg',
+                  width: 250,
+                  fit: BoxFit.contain,
+                ),
+              ),
           ],
         ),
       ),
     );
     return Container(
-        constraints: const BoxConstraints(maxWidth: 600), child: w);
+        constraints: const BoxConstraints(maxWidth: 1120), child: w);
+  }
+
+  /// Cabeçalho do card de ligação: título, descrição e badge de estado.
+  Widget _buildConnectHeader(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                translate('Control Remote Desktop'),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: MyTheme.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                translate('Enter Remote ID'),
+                style: const TextStyle(
+                    fontSize: 12, height: 1.3, color: MyTheme.textMuted),
+              ),
+            ],
+          ),
+        ),
+        Obx(() {
+          final ready = stateGlobal.svcStatus.value == SvcStatus.ready;
+          final color = ready ? MyTheme.green : MyTheme.textMuted;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: MyTheme.surface2,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: MyTheme.hairline),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration:
+                    BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                ready ? translate('Ready') : translate('Connecting...'),
+                style: TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w500, color: color),
+              ),
+            ]),
+          );
+        }),
+      ],
+    );
   }
 }

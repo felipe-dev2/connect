@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:dynamic_layouts/dynamic_layouts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/models/ab_model.dart';
 import 'package:flutter_hbb/models/peer_tab_model.dart';
@@ -191,18 +192,22 @@ class _PeersViewState extends State<_PeersView>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.sentiment_very_dissatisfied_rounded,
-                  color: Theme.of(context).tabBarTheme.labelColor,
-                  size: 40,
-                ).paddingOnly(bottom: 10),
+                SvgPicture.asset(
+                  'assets/pcnet_empty_sessions.svg',
+                  width: 128,
+                  height: 128,
+                ),
+                const SizedBox(height: 16),
                 Text(
                   translate(
                     _emptyMessages[widget.peers.loadEvent] ?? 'Empty',
                   ),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).tabBarTheme.labelColor,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                    color: MyTheme.textSecondary,
                   ),
                 ),
               ],

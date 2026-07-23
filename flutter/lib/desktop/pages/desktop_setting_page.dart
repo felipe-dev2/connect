@@ -369,25 +369,36 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
             }
             selectedTab.value = tab.key;
           },
-          child: Row(children: [
-            Container(
-              width: 4,
-              height: _kTabHeight * 0.7,
-              color: selected ? _accentColor : null,
-            ),
-            Icon(
-              selected ? tab.selected : tab.unselected,
-              color: selected ? _accentColor : null,
-              size: 20,
-            ).marginOnly(left: 13, right: 10),
-            Text(
-              translate(tab.label),
-              style: TextStyle(
-                  color: selected ? _accentColor : null,
-                  fontWeight: FontWeight.w400,
-                  fontSize: _kContentFontSize),
-            ),
-          ]),
+          child: Container(
+            color: selected ? MyTheme.greenDark.withOpacity(0.15) : null,
+            child: Row(children: [
+              Container(
+                width: 3,
+                height: _kTabHeight * 0.55,
+                decoration: BoxDecoration(
+                  color: selected ? _accentColor : Colors.transparent,
+                  borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(2)),
+                ),
+              ),
+              Icon(
+                selected ? tab.selected : tab.unselected,
+                color: selected ? _accentColor : MyTheme.textSecondary,
+                size: 19,
+              ).marginOnly(left: 12, right: 10),
+              Flexible(
+                child: Text(
+                  translate(tab.label),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: selected ? _accentColor : MyTheme.textSecondary,
+                      fontWeight:
+                          selected ? FontWeight.w600 : FontWeight.w400,
+                      fontSize: _kContentFontSize),
+                ),
+              ),
+            ]),
+          ),
         ),
       );
     });
@@ -2505,7 +2516,12 @@ Widget _Card(
       Flexible(
         child: SizedBox(
           width: _kCardFixedWidth,
-          child: Card(
+          child: Container(
+            decoration: BoxDecoration(
+              color: MyTheme.surface,
+              borderRadius: BorderRadius.circular(MyTheme.radiusLg),
+              border: Border.all(color: MyTheme.hairline, width: 1),
+            ),
             child: Column(
               children: [
                 Row(
@@ -2516,15 +2532,17 @@ Widget _Card(
                       textAlign: TextAlign.start,
                       style: const TextStyle(
                         fontSize: _kTitleFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: MyTheme.textPrimary,
                       ),
                     )),
                     ...?title_suffix
                   ],
-                ).marginOnly(left: _kContentHMargin, top: 10, bottom: 10),
+                ).marginOnly(left: _kContentHMargin, top: 14, bottom: 10),
                 ...children
                     .map((e) => e.marginOnly(top: 4, right: _kContentHMargin)),
               ],
-            ).marginOnly(bottom: 10),
+            ).marginOnly(bottom: 14),
           ).marginOnly(left: _kCardLeftMargin, top: 15),
         ),
       ),

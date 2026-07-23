@@ -1,0 +1,60 @@
+<svg viewBox="0 0 340 210" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9BE04A"/>
+      <stop offset="100%" stop-color="#3FBFA0"/>
+    </linearGradient>
+    <linearGradient id="pgSoft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7BB843" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#3FBFA0" stop-opacity="0.10"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7BB843" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#7BB843" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- glow atrás do escudo -->
+  <circle cx="196" cy="98" r="78" fill="url(#glow)"/>
+
+  <!-- linhas de ligação tracejadas -->
+  <path d="M92 74 C 130 74, 140 92, 166 98" stroke="url(#pg)" stroke-width="1.6"
+        stroke-dasharray="5 6" stroke-linecap="round" opacity="0.75"/>
+  <path d="M226 112 C 252 124, 258 142, 276 150" stroke="url(#pg)" stroke-width="1.6"
+        stroke-dasharray="5 6" stroke-linecap="round" opacity="0.75"/>
+
+  <!-- nós -->
+  <circle cx="92" cy="74" r="3.2" fill="#9BE04A"/>
+  <circle cx="276" cy="150" r="3.2" fill="#3FBFA0"/>
+
+  <!-- monitor superior esquerdo -->
+  <g opacity="0.95">
+    <rect x="20" y="44" width="72" height="50" rx="6" fill="url(#pgSoft)"
+          stroke="url(#pg)" stroke-width="1.8"/>
+    <rect x="30" y="55" width="34" height="3" rx="1.5" fill="#9BE04A" opacity="0.85"/>
+    <rect x="30" y="64" width="52" height="3" rx="1.5" fill="#7BB843" opacity="0.45"/>
+    <rect x="30" y="73" width="24" height="3" rx="1.5" fill="#7BB843" opacity="0.45"/>
+    <path d="M48 94 v10 M38 104 h32" stroke="url(#pg)" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- monitor inferior direito -->
+  <g opacity="0.95">
+    <rect x="248" y="128" width="76" height="52" rx="6" fill="url(#pgSoft)"
+          stroke="url(#pg)" stroke-width="1.8"/>
+    <rect x="258" y="140" width="38" height="3" rx="1.5" fill="#9BE04A" opacity="0.85"/>
+    <rect x="258" y="149" width="56" height="3" rx="1.5" fill="#7BB843" opacity="0.45"/>
+    <rect x="258" y="158" width="28" height="3" rx="1.5" fill="#7BB843" opacity="0.45"/>
+    <path d="M286 180 v10 M276 190 h32" stroke="url(#pg)" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- escudo central com cadeado -->
+  <g>
+    <path d="M196 40 L232 54 V100 C232 126 214 144 196 152 C178 144 160 126 160 100 V54 Z"
+          fill="url(#pgSoft)" stroke="url(#pg)" stroke-width="2.2" stroke-linejoin="round"/>
+    <rect x="185" y="92" width="22" height="18" rx="3.5" fill="none"
+          stroke="url(#pg)" stroke-width="2"/>
+    <path d="M189.5 92 V85 a6.5 6.5 0 0 1 13 0 V92" fill="none"
+          stroke="url(#pg)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="196" cy="101" r="2.2" fill="#9BE04A"/>
+  </g>
+</svg>

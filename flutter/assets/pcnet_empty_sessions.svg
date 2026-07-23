@@ -1,0 +1,23 @@
+<svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="eg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7BB843" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#3FBFA0" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="eglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7BB843" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#7BB843" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="80" cy="80" r="74" fill="url(#eglow)"/>
+  <circle cx="80" cy="80" r="62" fill="none" stroke="#232A23" stroke-width="1.5"/>
+  <circle cx="80" cy="80" r="48" fill="none" stroke="#2A322A" stroke-width="1"/>
+
+  <!-- monitor -->
+  <rect x="50" y="58" width="60" height="42" rx="6" fill="none"
+        stroke="url(#eg)" stroke-width="2.4"/>
+  <path d="M80 100 v9 M66 109 h28" stroke="url(#eg)" stroke-width="2.4" stroke-linecap="round"/>
+  <rect x="60" y="70" width="24" height="3" rx="1.5" fill="#7BB843" opacity="0.55"/>
+  <rect x="60" y="79" width="34" height="3" rx="1.5" fill="#7BB843" opacity="0.30"/>
+</svg>
