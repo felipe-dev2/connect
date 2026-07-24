@@ -136,6 +136,16 @@ class _InstallPageBodyState extends State<_InstallPageBody>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // PCNET-IT: banner de marca no topo da janela de instalação
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/pcnet_banner.png',
+                  width: double.infinity,
+                  height: 96,
+                  fit: BoxFit.cover,
+                ),
+              ).marginOnly(bottom: 1.5 * em),
               Text(translate('Installation'),
                   style: Theme.of(context).textTheme.headlineMedium),
               Row(
@@ -187,9 +197,9 @@ class _InstallPageBodyState extends State<_InstallPageBody>
                           InkWell(
                             hoverColor: Colors.transparent,
                             onTap: () => launchUrlString(
-                                'https://rustdesk.com/privacy.html'),
+                                'https://www.pcnet-it.com.br'),
                             child: Tooltip(
-                              message: 'https://rustdesk.com/privacy.html',
+                              message: 'https://www.pcnet-it.com.br',
                               child: Row(children: [
                                 Icon(Icons.launch_outlined, size: 16)
                                     .marginOnly(right: 5),
