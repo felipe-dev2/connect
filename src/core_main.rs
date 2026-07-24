@@ -197,6 +197,15 @@ pub fn core_main() -> Option<Vec<String>> {
             crate::platform::try_remove_temp_update_files();
             hbb_common::config::PeerConfig::preload_peers();
         }
+        // PCNET-IT: garantir que o acesso não-assistido SOBE sempre que a app abre.
+        // O registo no servidor de rendezvous só acontece se "stop-service" != "Y"
+        // (ver rendezvous_mediator). Fechar o serviço no tray, ou uma instalação
+        // anterior, deixa essa flag a "Y" e o acesso nunca mais sobe. Limpamo-la no
+        // arranque. Sem UAC: não recria o serviço SYSTEM, apenas destrava o registo
+        // do --server (in-process na sessão do utilizador, ou o do serviço).
+        if config::Config::get_option("stop-service") == "Y" {
+            config::Config::set_option("stop-service".to_owned(), "".to_owned());
+        }
         std::thread::spawn(move || crate::start_server(false, no_server));
     } else {
         #[cfg(any(target_os = "linux", target_os = "macos"))]

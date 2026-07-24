@@ -3693,14 +3693,20 @@ fn get_import_config(exe: &str) -> String {
     if config::is_outgoing_only() {
         return "".to_string();
     }
+    // PCNET-IT: o serviço transitório de import de config usa um NOME DISTINTO do
+    // serviço definitivo. Antes usava o MESMO nome e o `sc delete` deste (marcado
+    // para eliminação) fazia o `sc create` seguinte (get_create_service) falhar com
+    // 1072 ("marked for deletion"), silenciosamente -> o serviço nunca era criado.
+    let import_svc = format!("{}-import", crate::get_app_name());
     format!("
-sc stop \"{app_name}\"
-sc delete \"{app_name}\"
-sc create \"{app_name}\" binpath= \"\\\"{exe}\\\" --import-config \\\"{config_path}\\\"\" start= auto DisplayName= \"{app_name} Service\"
-sc start \"{app_name}\"
-sc stop \"{app_name}\"
-sc delete \"{app_name}\"
+sc stop \"{import_svc}\"
+sc delete \"{import_svc}\"
+sc create \"{import_svc}\" binpath= \"\\\"{exe}\\\" --import-config \\\"{config_path}\\\"\" start= demand DisplayName= \"{app_name} Import\"
+sc start \"{import_svc}\"
+sc stop \"{import_svc}\"
+sc delete \"{import_svc}\"
 ",
+    import_svc = import_svc,
     app_name = crate::get_app_name(),
     config_path=Config::file().to_str().unwrap_or(""),
 )
