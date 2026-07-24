@@ -107,7 +107,7 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
                 ),
               ),
             )));
-    return isMacOS || kUseCompatibleUiMode
+    final content = isMacOS || kUseCompatibleUiMode
         ? tabWidget
         : Obx(
             () => DragToResizeArea(
@@ -116,5 +116,89 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
               child: tabWidget,
             ),
           );
+    // PCNET-IT: splash de abertura por cima da home (auto-desvanece)
+    return Stack(children: [content, const _PcnetSplash()]);
+  }
+}
+
+/// Splash de abertura da PCNET-IT-Connect. Aparece sobre a home ~1.3s, faz
+/// fade-out e depois encolhe (deixa de bloquear cliques). Auto-contido: usa
+/// Future.delayed com guarda `mounted`, sem Timer para gerir.
+class _PcnetSplash extends StatefulWidget {
+  const _PcnetSplash();
+
+  @override
+  State<_PcnetSplash> createState() => _PcnetSplashState();
+}
+
+class _PcnetSplashState extends State<_PcnetSplash> {
+  bool _visible = true;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 1300), () {
+      if (mounted) setState(() => _visible = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_done) return const SizedBox.shrink();
+    return IgnorePointer(
+      ignoring: !_visible,
+      child: AnimatedOpacity(
+        opacity: _visible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 550),
+        onEnd: () {
+          if (!_visible && mounted) setState(() => _done = true);
+        },
+        child: Container(
+          color: const Color(0xFF0A0C0A),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Opacity(
+                opacity: 0.18,
+                child: Image.asset('assets/pcnet_bg.jpg', fit: BoxFit.cover),
+              ),
+              Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.85, end: 1.0),
+                  duration: const Duration(milliseconds: 750),
+                  curve: Curves.easeOutBack,
+                  builder: (_, s, child) =>
+                      Transform.scale(scale: s, child: child),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      loadIcon(120),
+                      const SizedBox(height: 20),
+                      Text(
+                        bind.mainGetAppNameSync(),
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: MyTheme.textPrimary),
+                      ),
+                      const SizedBox(height: 18),
+                      const SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                MyTheme.accent)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
