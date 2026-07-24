@@ -1025,15 +1025,73 @@ _connectDialog(
       );
     }
 
-    return CustomAlertDialog(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+    // PCNET-IT: no caso de ligação por senha simples (sem login de SO), mostramos
+    // um cabeçalho "a aguardar aceitação" com a logo e um anel circular a
+    // preencher — mantendo o campo de senha por baixo como alternativa (para
+    // acesso não-assistido). TweenAnimationBuilder auto-dispõe, sem timer órfão.
+    final isConnectWait =
+        osUsernameController == null && passwordController != null;
+
+    Widget waitingHeader() {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.password_rounded, color: MyTheme.accent),
-          Text(translate('Password Required')).paddingOnly(left: 10),
+          SizedBox(
+            width: 96,
+            height: 96,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(seconds: 120),
+                  builder: (context, value, _) => SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 3,
+                      backgroundColor: MyTheme.color(context).divider,
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(MyTheme.accent),
+                    ),
+                  ),
+                ),
+                loadIcon(64),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            translate('Aguardando o outro lado aceitar a conexão'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            translate('Ou insira a senha de acesso abaixo'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).hintColor),
+          ),
+          const SizedBox(height: 16),
         ],
-      ),
+      );
+    }
+
+    return CustomAlertDialog(
+      title: isConnectWait
+          ? null
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.password_rounded, color: MyTheme.accent),
+                Text(translate('Password Required')).paddingOnly(left: 10),
+              ],
+            ),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (isConnectWait) waitingHeader(),
         osAccountWidget(),
         osUsernameController == null || passwordController == null
             ? Offstage()
