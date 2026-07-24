@@ -356,6 +356,12 @@ class _ConnectionPageState extends State<ConnectionPage>
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
       decoration: BoxDecoration(
           color: MyTheme.surface,
+          // PCNET-IT: fundo tech subtil (mosaico verde/preto) por baixo do conteúdo
+          image: const DecorationImage(
+            image: AssetImage('assets/pcnet_bg.jpg'),
+            fit: BoxFit.cover,
+            opacity: 0.12,
+          ),
           borderRadius: BorderRadius.circular(MyTheme.radiusLg),
           border: Border.all(color: MyTheme.hairline, width: 1)),
       child: Ink(
@@ -370,7 +376,10 @@ class _ConnectionPageState extends State<ConnectionPage>
                   const SizedBox(height: 16),
                   Row(
               children: [
-                Expanded(
+                // PCNET-IT: largura fixa do campo de ID (antes era Expanded e
+                // esticava por todo o card). A ilustração hero fica onde está.
+                SizedBox(
+                    width: 380,
                     child: RawAutocomplete<Peer>(
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text == '') {
@@ -532,7 +541,7 @@ class _ConnectionPageState extends State<ConnectionPage>
             ),
             Padding(
               padding: const EdgeInsets.only(top: 13.0),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
                 SizedBox(
                   height: 28.0,
                   child: ElevatedButton(

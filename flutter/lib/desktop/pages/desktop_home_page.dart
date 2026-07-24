@@ -185,6 +185,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
       decoration: BoxDecoration(
         color: MyTheme.surface,
+        // PCNET-IT: fundo tech subtil (mosaico verde/preto) por baixo do conteúdo
+        image: const DecorationImage(
+          image: AssetImage('assets/pcnet_bg.jpg'),
+          fit: BoxFit.cover,
+          opacity: 0.12,
+        ),
         borderRadius: BorderRadius.circular(MyTheme.radiusLg),
         border: Border.all(color: MyTheme.hairline, width: 1),
       ),
