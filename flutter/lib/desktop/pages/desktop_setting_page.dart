@@ -2188,8 +2188,8 @@ class _PcnetIdentityState extends State<_PcnetIdentity> {
   void initState() {
     super.initState();
     _nameController.text =
-        bind.mainGetLocalOptionSync(key: 'custom-display-name');
-    _avatar = bind.mainGetLocalOptionSync(key: 'custom-avatar');
+        bind.mainGetLocalOption(key: 'custom-display-name');
+    _avatar = bind.mainGetLocalOption(key: 'custom-avatar');
   }
 
   @override
