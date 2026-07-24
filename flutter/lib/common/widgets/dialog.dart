@@ -1033,35 +1033,59 @@ _connectDialog(
         osUsernameController == null && passwordController != null;
 
     Widget waitingHeader() {
+      const totalSeconds = 120;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(seconds: 120),
-                  builder: (context, value, _) => SizedBox(
+          // PCNET-IT: anel + contador partilham o MESMO `value` do
+          // TweenAnimationBuilder, garantindo sincronia perfeita entre o
+          // preenchimento do anel e a contagem decrescente por baixo da logo.
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(seconds: totalSeconds),
+            builder: (context, value, _) {
+              final remaining =
+                  (totalSeconds * (1 - value)).ceil().clamp(0, totalSeconds);
+              final mm = (remaining ~/ 60).toString();
+              final ss = (remaining % 60).toString().padLeft(2, '0');
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
                     width: 96,
                     height: 96,
-                    child: CircularProgressIndicator(
-                      value: value,
-                      strokeWidth: 3,
-                      backgroundColor: MyTheme.color(context).divider,
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(MyTheme.accent),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: CircularProgressIndicator(
+                            value: value,
+                            strokeWidth: 3,
+                            backgroundColor: MyTheme.color(context).divider,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                MyTheme.accent),
+                          ),
+                        ),
+                        loadIcon(64),
+                      ],
                     ),
                   ),
-                ),
-                loadIcon(64),
-              ],
-            ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '$mm:$ss',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: MyTheme.accent,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Text(
             translate('Aguardando o outro lado aceitar a conexão'),
             textAlign: TextAlign.center,
