@@ -1553,6 +1553,12 @@ fn get_after_install(
 }
 
 pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> ResultType<()> {
+    // PCNET-IT: instalar é intenção explícita de ter o serviço a correr.
+    // Sem isto, uma flag "stop-service=Y" deixada por uma instalação/desinstalação
+    // anterior faz o get_create_service() saltar silenciosamente o `sc create`,
+    // e o produto fica sem serviço até alguém clicar em "Iniciar Serviço".
+    // Mesmo padrão já usado em install_service().
+    Config::set_option("stop-service".into(), "".into());
     let uninstall_str = get_uninstall(false, false);
     let mut path = path.trim_end_matches('\\').to_owned();
     let (subkey, _path, start_menu, exe) = get_default_install_info();
