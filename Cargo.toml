@@ -213,7 +213,7 @@ libxdo-sys = { path = "libs/libxdo-sys-stub" }
 LegalCopyright = "Copyright © 2026 PCNET-IT. Todos os direitos reservados."
 ProductName = "PCNET-IT Connect"
 FileDescription = "PCNET-IT Connect - Acesso Remoto"
-OriginalFilename = "rustdesk.exe"
+OriginalFilename = "PCNET-IT-Connect.exe"
 
 [target.'cfg(target_os="windows")'.build-dependencies]
 winres = "0.1"

@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Purslane Tech Pte. Ltd." "\0"
+            VALUE "CompanyName", "PCNET-IT" "\0"
             VALUE "FileDescription", "PCNET-IT Connect - Acesso Remoto" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "PCNET-IT-Connect" "\0"
-            VALUE "LegalCopyright", "Copyright © 2026 Purslane Tech Pte. Ltd. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright © 2026 PCNET-IT. Todos os direitos reservados." "\0"
             VALUE "OriginalFilename", "PCNET-IT-Connect.exe" "\0"
             VALUE "ProductName", "PCNET-IT Connect" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
