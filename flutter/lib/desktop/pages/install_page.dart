@@ -44,9 +44,9 @@ class _InstallPageState extends State<InstallPage> {
     return DragToResizeArea(
       resizeEdgeSize: stateGlobal.resizeEdgeSize.value,
       enableResizeEdges: windowManagerEnableResizeEdges,
-      child: Container(
+      child: pcnetBackdrop(
         child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
+            backgroundColor: Colors.transparent,
             body: DesktopTab(controller: tabController)),
       ),
     );
@@ -131,7 +131,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     final double em = 13;
     final isDarkTheme = MyTheme.currentThemeMode() == ThemeMode.dark;
     return Scaffold(
-        backgroundColor: null,
+        backgroundColor: Colors.transparent, // PCNET-IT: fundo tech por baixo
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

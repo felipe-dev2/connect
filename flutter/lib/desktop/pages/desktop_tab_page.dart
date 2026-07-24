@@ -91,9 +91,9 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tabWidget = Container(
+    final tabWidget = pcnetBackdrop(
         child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
+            backgroundColor: Colors.transparent,
             body: DesktopTab(
               controller: tabController,
               showTitle: true, // PCNET-IT: nome ao lado da logo na barra de topo

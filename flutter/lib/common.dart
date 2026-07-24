@@ -3861,6 +3861,24 @@ Widget loadIcon(double size) {
           ));
 }
 
+/// PCNET-IT: fundo tech suave (mosaico verde/preto) aplicado por baixo de
+/// qualquer página. Usado para não deixar nenhuma área com preto puro.
+/// Reutilizável: envolve-se o conteúdo e tornam-se transparentes os Scaffolds
+/// por cima para o fundo aparecer.
+Widget pcnetBackdrop({required Widget child}) {
+  return Container(
+    decoration: const BoxDecoration(
+      color: Color(0xFF0A0C0A),
+      image: DecorationImage(
+        image: AssetImage('assets/pcnet_bg.jpg'),
+        fit: BoxFit.cover,
+        opacity: 0.14,
+      ),
+    ),
+    child: child,
+  );
+}
+
 var imcomingOnlyHomeSize = Size(280, 300);
 Size getIncomingOnlyHomeSize() {
   final magicWidth = isWindows ? 11.0 : 2.0;

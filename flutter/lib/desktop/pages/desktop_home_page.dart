@@ -122,7 +122,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       value: gFFI.serverModel,
       child: Container(
         width: isIncomingOnly ? 300.0 : 296.0,
-        color: Theme.of(context).colorScheme.background,
+        color: Colors.transparent, // PCNET-IT: deixa o fundo tech aparecer
         child: Stack(
           children: [
             Column(
@@ -172,7 +172,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   buildRightPane(BuildContext context) {
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: Colors.transparent, // PCNET-IT: deixa o fundo tech aparecer
       child: ConnectionPage(),
     );
   }

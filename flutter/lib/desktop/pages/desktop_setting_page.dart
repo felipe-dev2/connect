@@ -277,7 +277,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Colors.transparent, // PCNET-IT: fundo tech por baixo
       body: _buildBlock(
         children: <Widget>[
           SizedBox(
@@ -292,7 +292,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           const VerticalDivider(width: 1),
           Expanded(
             child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: Colors.transparent, // PCNET-IT: fundo tech por baixo
               child: PageView(
                 controller: controller,
                 physics: NeverScrollableScrollPhysics(),
