@@ -2662,6 +2662,11 @@ impl LoginConfigHandler {
         };
         let mut avatar = get_builtin_option(keys::OPTION_AVATAR);
         if avatar.is_empty() {
+            // PCNET-IT: foto definida pelo utilizador (Definições > Conta),
+            // guardada como data URI base64. Aparece ao cliente ao ligar.
+            avatar = LocalConfig::get_option("custom-avatar");
+        }
+        if avatar.is_empty() {
             avatar = serde_json::from_str::<serde_json::Value>(&LocalConfig::get_option(
                 "user_info",
             ))
@@ -2674,40 +2679,48 @@ impl LoginConfigHandler {
             .unwrap_or_default();
         }
         avatar = resolve_avatar_url(avatar);
-        let mut display_name = get_builtin_option(keys::OPTION_DISPLAY_NAME);
-        if display_name.is_empty() {
-            display_name =
-                serde_json::from_str::<serde_json::Value>(&LocalConfig::get_option("user_info"))
-                    .map(|x| {
-                        x.get("display_name")
-                            .and_then(|x| x.as_str())
-                            .map(|x| x.trim())
-                            .filter(|x| !x.is_empty())
-                            .or_else(|| x.get("name").and_then(|x| x.as_str()))
-                            .map(|x| x.to_owned())
-                            .unwrap_or_default()
-                    })
-                    .unwrap_or_default();
-        }
-        if display_name.is_empty() {
-            display_name = crate::username();
-        }
-        let display_name = display_name
-            .split_whitespace()
-            .map(|word| {
-                word.chars()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        if i == 0 {
-                            c.to_uppercase().to_string()
-                        } else {
-                            c.to_string()
-                        }
-                    })
-                    .collect::<String>()
-            })
-            .collect::<Vec<_>>()
-            .join(" ");
+        // PCNET-IT: "Nome de exibição" definido pelo utilizador (Definições >
+        // Conta) tem prioridade e é enviado tal como escrito ao lado controlado,
+        // para o cliente saber que é a PCNET-IT a ligar.
+        let custom_display_name = LocalConfig::get_option("custom-display-name");
+        let display_name = if !custom_display_name.trim().is_empty() {
+            custom_display_name.trim().to_owned()
+        } else {
+            let mut display_name = get_builtin_option(keys::OPTION_DISPLAY_NAME);
+            if display_name.is_empty() {
+                display_name =
+                    serde_json::from_str::<serde_json::Value>(&LocalConfig::get_option("user_info"))
+                        .map(|x| {
+                            x.get("display_name")
+                                .and_then(|x| x.as_str())
+                                .map(|x| x.trim())
+                                .filter(|x| !x.is_empty())
+                                .or_else(|| x.get("name").and_then(|x| x.as_str()))
+                                .map(|x| x.to_owned())
+                                .unwrap_or_default()
+                        })
+                        .unwrap_or_default();
+            }
+            if display_name.is_empty() {
+                display_name = crate::username();
+            }
+            display_name
+                .split_whitespace()
+                .map(|word| {
+                    word.chars()
+                        .enumerate()
+                        .map(|(i, c)| {
+                            if i == 0 {
+                                c.to_uppercase().to_string()
+                            } else {
+                                c.to_string()
+                            }
+                        })
+                        .collect::<String>()
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
         #[cfg(not(target_os = "android"))]
         let my_platform = hbb_common::whoami::platform().to_string();
         #[cfg(target_os = "android")]

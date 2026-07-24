@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -2090,6 +2091,7 @@ class _AccountState extends State<_Account> {
       controller: scrollController,
       children: [
         _Card(title: 'Account', children: [accountAction(), useInfo()]),
+        const _PcnetIdentity(),
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
@@ -2165,6 +2167,135 @@ class _AccountState extends State<_Account> {
       avatar: avatar,
       size: 44,
     );
+  }
+}
+
+// PCNET-IT: identidade que o técnico mostra ao cliente ao ligar (nome + foto).
+// Guardado em LocalConfig ('custom-display-name' / 'custom-avatar') e lido em
+// src/client.rs (create_login_msg) para preencher LoginRequest.my_name/avatar.
+class _PcnetIdentity extends StatefulWidget {
+  const _PcnetIdentity({Key? key}) : super(key: key);
+
+  @override
+  State<_PcnetIdentity> createState() => _PcnetIdentityState();
+}
+
+class _PcnetIdentityState extends State<_PcnetIdentity> {
+  final TextEditingController _nameController = TextEditingController();
+  String _avatar = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text =
+        bind.mainGetLocalOptionSync(key: 'custom-display-name');
+    _avatar = bind.mainGetLocalOptionSync(key: 'custom-avatar');
+  }
+
+  @override
+  void dispose() {
+    // Garante que o nome escrito fica gravado ao sair da página.
+    bind.mainSetLocalOption(
+        key: 'custom-display-name', value: _nameController.text.trim());
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickPhoto() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final bytes = result.files.first.bytes;
+      if (bytes == null) return;
+      // Redimensiona mantendo proporção (lado maior <= 128px) e recodifica PNG,
+      // para não inflar a mensagem de login com a foto em base64.
+      final probe = await ui.instantiateImageCodec(bytes);
+      final probeFrame = await probe.getNextFrame();
+      final w = probeFrame.image.width;
+      final h = probeFrame.image.height;
+      probeFrame.image.dispose();
+      final maxSide = w > h ? w : h;
+      final scale = maxSide > 128 ? 128 / maxSide : 1.0;
+      final codec = await ui.instantiateImageCodec(
+        bytes,
+        targetWidth: (w * scale).round().clamp(1, 128),
+        targetHeight: (h * scale).round().clamp(1, 128),
+      );
+      final frame = await codec.getNextFrame();
+      final data =
+          await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      frame.image.dispose();
+      if (data == null) return;
+      final dataUri =
+          'data:image/png;base64,${base64Encode(data.buffer.asUint8List())}';
+      await bind.mainSetLocalOption(key: 'custom-avatar', value: dataUri);
+      if (mounted) setState(() => _avatar = dataUri);
+    } catch (e) {
+      debugPrint('PCNET pickPhoto: $e');
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    await bind.mainSetLocalOption(key: 'custom-avatar', value: '');
+    if (mounted) setState(() => _avatar = '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = buildAvatarWidget(
+      avatar: _avatar,
+      size: 56,
+      fallback: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: MyTheme.color(context).divider,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Icons.person, color: Theme.of(context).hintColor),
+      ),
+    );
+    return _Card(title: 'Identidade PCNET-IT', children: [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          translate(
+              'Este nome e foto aparecem no ecrã do cliente quando você se liga a ele.'),
+          style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+        ),
+      ).marginOnly(left: _kContentHMargin, bottom: 6),
+      TextField(
+        controller: _nameController,
+        onChanged: (v) => bind.mainSetLocalOption(
+            key: 'custom-display-name', value: v.trim()),
+        decoration: InputDecoration(
+          labelText: translate('Nome de exibição'),
+          hintText: 'PCNET-IT — Nome do técnico',
+          isDense: true,
+        ),
+      ).marginOnly(left: _kContentHMargin),
+      Row(
+        children: [
+          preview ?? const SizedBox(width: 56, height: 56),
+          const SizedBox(width: 14),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.photo_camera_outlined, size: 16),
+            label: Text(translate('Escolher foto')),
+            onPressed: _pickPhoto,
+          ),
+          const SizedBox(width: 10),
+          if (_avatar.isNotEmpty)
+            OutlinedButton.icon(
+              icon: const Icon(Icons.delete_outline, size: 16),
+              label: Text(translate('Remover')),
+              onPressed: _removePhoto,
+            ),
+        ],
+      ).marginOnly(left: _kContentHMargin, top: 12),
+    ]);
   }
 }
 
