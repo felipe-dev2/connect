@@ -658,17 +658,11 @@ class MyTheme {
   }
 
   static ThemeMode themeModeFromString(String v) {
-    switch (v) {
-      case "light":
-        return ThemeMode.light;
-      case "dark":
-        return ThemeMode.dark;
-      case "system":
-        return ThemeMode.system;
-      default:
-        // PCNET-IT: tema escuro (preto+verde) por defeito
-        return ThemeMode.dark;
-    }
+    // PCNET-IT: a identidade é preto+verde e o tema claro não está preparado.
+    // Forçamos escuro SEMPRE, ignorando qualquer valor guardado (protege quem
+    // tenha "light" gravado de uma instalação anterior). O seletor de tema foi
+    // removido das Definições.
+    return ThemeMode.dark;
   }
 }
 

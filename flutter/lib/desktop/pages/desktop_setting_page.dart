@@ -427,7 +427,8 @@ class _GeneralState extends State<_General> {
       controller: scrollController,
       children: [
         if (!isWeb) service(),
-        theme(),
+        // PCNET-IT: seletor de tema removido — app sempre em modo escuro (preto+verde).
+        // theme(),
         _Card(title: 'Language', children: [language()]),
         if (!isWeb) hwcodec(),
         if (!isWeb) audio(context),
