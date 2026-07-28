@@ -5,10 +5,17 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = RustDesk
+// Must match APP_NAME in libs/hbb_common/src/config.rs: the Rust side builds
+// paths like /Applications/{APP_NAME}.app (src/platform/macos.rs).
+PRODUCT_NAME = PCNET-IT-Connect
+
+// Swift module name. Pinned explicitly because it would otherwise default to
+// $(PRODUCT_NAME:c99extidentifier); MainMenu.xib references it by name in
+// customModule, so the two must stay in sync or AppDelegate is not found.
+PRODUCT_MODULE_NAME = PCNET_IT_Connect
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.carriez.flutterHbb
+PRODUCT_BUNDLE_IDENTIFIER = br.com.pcnetit.connect
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 Purslane Tech Pte. Ltd. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 PCNET-IT. All rights reserved.

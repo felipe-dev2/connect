@@ -230,7 +230,8 @@ docopt = "1.1"
 
 [package.metadata.bundle]
 name = "PCNET-IT Connect"
-identifier = "com.pcnetit.connect"
+# igual ao PRODUCT_BUNDLE_IDENTIFIER em flutter/macos/Runner/Configs/AppInfo.xcconfig
+identifier = "br.com.pcnetit.connect"
 icon = ["res/32x32.png", "res/128x128.png", "res/128x128@2x.png"]
 osx_minimum_system_version = "10.14"
 

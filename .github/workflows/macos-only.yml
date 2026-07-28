@@ -1,0 +1,22 @@
+name: Build macOS (PCNET-IT Connect)
+
+# Build rápido só de macOS, para iterar sem esperar por
+# Windows/Android/Linux/iOS. Reutiliza o pipeline oficial com o
+# interruptor `macos_only`.
+#
+# Produz dois DMG unsigned (o cliente tem de fazer botão-direito -> Abrir
+# na primeira execução):
+#   - aarch64 (Apple Silicon, runner macos-14)
+#   - x86_64  (Intel, runner macos-15-intel)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: "nightly"
+      macos_only: true
