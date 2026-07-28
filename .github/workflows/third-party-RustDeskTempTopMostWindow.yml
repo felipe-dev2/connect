@@ -41,6 +41,13 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
 
+      # PCNET-IT: precisamos do nosso img.cpp (imagem do ecra "Modo Suporte")
+      # para substituir o "Privacy Mode" original embutido na DLL.
+      - name: Checkout PCNET-IT overlay resources
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: connect-src
+
       - name: Download the source code
         run: |
           git clone https://github.com/rustdesk-org/RustDeskTempTopMostWindow RustDeskTempTopMostWindow
@@ -48,6 +55,9 @@ jobs:
       - name: Build the project
         run: |
           cd RustDeskTempTopMostWindow && git checkout ecd8d6a139eee76845ea66423fb739af450fda90
+          # Substitui a imagem embutida (Privacy Mode / Press Ctrl+P) pela nossa
+          # (Modo Suporte). img.h fica igual: g_imgLen = sizeof(g_img).
+          Copy-Item -Force ../connect-src/res/privacy_mode/img.cpp WindowInjection/img.cpp
           msbuild ${{ env.project_path }} -p:Configuration=${{ inputs.configuration }} -p:Platform=${{ inputs.platform }} /p:TargetVersion=${{ inputs.target_version }}
 
       - name: Archive build artifacts

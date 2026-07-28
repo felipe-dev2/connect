@@ -211,18 +211,28 @@ pub extern "system" fn privacy_mode_hook_keyboard(
 
             match w_param2 {
                 WM_KEYDOWN => {
-                    // Disable all keys other than P and Ctrl.
-                    if ![80, 162, 163].contains(&(*ks).vkCode) {
+                    // Allow Ctrl, Shift and P through; block everything else.
+                    // Shift is allowed only so the break-glass combo below is
+                    // reliably detectable (its state must reach this thread).
+                    if ![80, 160, 161, 162, 163].contains(&(*ks).vkCode) {
                         return 1;
                     }
 
                     // NOTE: GetKeyboardState may not work well...
 
-                    // Check if Ctrl + P is pressed
-                    let cltr_down = (GetKeyState(VK_CONTROL) as u16) & (0x8000 as u16) > 0;
+                    // PCNET-IT: o Ctrl+P simples (saida documentada do RustDesk) foi
+                    // NEUTRALIZADO de proposito, para o utilizador local nao poder
+                    // interromper uma sessao de suporte autorizada. Mantemos uma
+                    // saida de emergencia ESCONDIDA — Ctrl+Shift+P — para um tecnico
+                    // fisicamente na maquina a poder recuperar se a sessao congelar.
+                    // A saida normal do tecnico REMOTO (botao na barra) e o failsafe
+                    // de queda da ligacao (connection.rs) nao passam por este hook e
+                    // continuam a funcionar.
+                    let ctrl_down = (GetKeyState(VK_CONTROL) as u16) & (0x8000 as u16) > 0;
+                    let shift_down = (GetKeyState(VK_SHIFT) as u16) & (0x8000 as u16) > 0;
                     let key = LOBYTE((*ks).vkCode as _);
-                    if cltr_down && (key == 'p' as u8 || key == 'P' as u8) {
-                        // Ctrl + P is pressed, turn off privacy mode
+                    if ctrl_down && shift_down && (key == 'p' as u8 || key == 'P' as u8) {
+                        // Ctrl + Shift + P: saida de emergencia do tecnico.
                         if let Some(Err(e)) = super::turn_off_privacy(
                             super::INVALID_PRIVACY_MODE_CONN_ID,
                             Some(super::PrivacyModeState::OffByPeer),
