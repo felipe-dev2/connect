@@ -421,7 +421,19 @@ def build_flutter_dmg(version, features):
     system2(
         f'FLUTTER_XCODE_ARCHS={mac_arch} FLUTTER_XCODE_ONLY_ACTIVE_ARCH=YES flutter build macos --release')
     # bundle name comes from PRODUCT_NAME in flutter/macos/Runner/Configs/AppInfo.xcconfig
-    system2(f'cp -rf ../target/release/service "./build/macos/Build/Products/Release/{mac_app_name}/Contents/MacOS/"')
+    app_path = f'./build/macos/Build/Products/Release/{mac_app_name}'
+    system2(f'cp -rf ../target/release/service "{app_path}/Contents/MacOS/"')
+    # Xcode ad-hoc signs the bundle at the end of `flutter build macos --release`
+    # (CODE_SIGN_IDENTITY "-", hardened runtime on). Dropping `service` into
+    # Contents/MacOS/ afterwards invalidates the sealed CodeResources, and macOS
+    # then refuses to launch the app ("is damaged and can't be opened") — which
+    # right-click > Open does not bypass. Sign the added binary and re-seal the
+    # bundle, keeping the runtime options and entitlements Xcode applied. The
+    # signed CI path re-signs over this with the Developer ID, so no conflict.
+    system2(f'codesign --force --options runtime -s - "{app_path}/Contents/MacOS/service"')
+    system2(f'codesign --force --options runtime '
+            f'--entitlements macos/Runner/Release.entitlements -s - "{app_path}"')
+    system2(f'codesign --verify --strict -vvv "{app_path}"')
     '''
     system2(
         f"create-dmg --volname \"PCNET-IT-Connect Installer\" --window-pos 200 120 --window-size 800 400 --icon-size 100 --app-drop-link 600 185 --icon {mac_app_name} 200 190 --hide-extension {mac_app_name} pcnet-it-connect.dmg ./build/macos/Build/Products/Release/{mac_app_name}")
