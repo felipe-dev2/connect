@@ -11,6 +11,10 @@
 #include <mutex>
 #include <string>
 
+// PCNET-IT: bytes da GIF animada da tela "Modo Suporte" (gerado por
+// res/privacy_mode/gen_mac_support.py).
+#include "mac_support_screen.h"
+
 extern "C" bool CanUseNewApiForScreenCaptureCheck() {
     #ifdef NO_InputMonitoringAuthStatus
     return false;
@@ -422,6 +426,11 @@ static bool ApplyBlackoutToDisplay(CGDirectDisplayID display) {
 // Must be called while holding g_privacyModeMutex
 static bool TurnOffPrivacyModeInternal();
 
+// PCNET-IT: overlay "Modo Suporte" (janela opaca em ecra inteiro por monitor,
+// com a animacao). Definidas mais abaixo; usadas no turn on/off.
+static void ShowSupportOverlay();
+static void HideSupportOverlay();
+
 // Helper function to schedule asynchronous shutdown of privacy mode.
 // This is called from DisplayReconfigurationCallback when an error occurs,
 // instead of calling TurnOffPrivacyModeInternal() directly. This avoids
@@ -774,7 +783,12 @@ static bool TurnOffPrivacyModeInternal() {
     if (!g_privacyModeActive) {
         return true;
     }
-    
+
+    // PCNET-IT: remover o overlay "Modo Suporte". (Os passos de gamma abaixo sao
+    // no-op quando so usamos overlay, pois nao guardamos/aplicamos gamma; ficam
+    // como rede de seguranca.)
+    HideSupportOverlay();
+
     // 1. Unregister display reconfiguration callback
     CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback, NULL);
     
@@ -799,6 +813,76 @@ static bool TurnOffPrivacyModeInternal() {
     return restoreSuccess;
 }
 
+// PCNET-IT: janelas do overlay "Modo Suporte" (uma por monitor). Acedidas apenas
+// na main thread (dentro dos blocos dispatch), por isso sem lock adicional.
+static NSMutableArray* g_supportWindows = nil;
+
+// Mostra a tela "Modo Suporte" em ecra inteiro (opaca) em cada monitor, com a
+// animacao a correr. Usada em vez do escurecimento por gamma (que tornaria o
+// overlay invisivel). Idempotente.
+static void ShowSupportOverlay() {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (g_supportWindows != nil) {
+            return; // ja visivel
+        }
+        g_supportWindows = [[NSMutableArray alloc] init];
+        for (NSScreen* screen in [NSScreen screens]) {
+            NSRect frame = [screen frame];
+            NSWindow* win = [[NSWindow alloc] initWithContentRect:frame
+                                                        styleMask:NSWindowStyleMaskBorderless
+                                                          backing:NSBackingStoreBuffered
+                                                            defer:NO];
+            [win setReleasedWhenClosed:NO];
+            [win setLevel:(NSInteger)CGShieldingWindowLevel()];
+            [win setOpaque:YES];
+            [win setBackgroundColor:[NSColor blackColor]];
+            [win setIgnoresMouseEvents:YES]; // o input local ja e' bloqueado pelo event tap
+            // CRUCIAL: excluir da captura de ecra, para o TECNICO continuar a ver o
+            // desktop real (a janela so aparece no ecra fisico local). Equivalente
+            // ao WDA_EXCLUDEFROMCAPTURE do Windows.
+            [win setSharingType:NSWindowSharingNone];
+            [win setCollectionBehavior:(NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                        NSWindowCollectionBehaviorStationary |
+                                        NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                        NSWindowCollectionBehaviorIgnoresCycle)];
+            NSImageView* iv = [[NSImageView alloc] initWithFrame:[[win contentView] bounds]];
+            [iv setImageScaling:NSImageScaleAxesIndependently];
+            [iv setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+            // NSData criado aqui (na main thread, dentro do bloco) para nao depender
+            // de um autorelease pool de outra thread.
+            NSData* data = [NSData dataWithBytes:g_mac_support_gif
+                                          length:g_mac_support_gif_len];
+            NSImage* img = [[NSImage alloc] initWithData:data];
+            if (img != nil) {
+                [iv setImage:img];
+                [img release];
+            }
+            [iv setAnimates:YES];
+            [[win contentView] addSubview:iv];
+            [iv release];
+            [win orderFrontRegardless];
+            [g_supportWindows addObject:win];
+            [win release]; // o array passa a ser o unico dono
+        }
+    });
+}
+
+// Remove o overlay "Modo Suporte". Idempotente.
+static void HideSupportOverlay() {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (g_supportWindows == nil) {
+            return;
+        }
+        for (NSWindow* win in g_supportWindows) {
+            [win orderOut:nil];
+            [win close];
+        }
+        [g_supportWindows removeAllObjects];
+        [g_supportWindows release];
+        g_supportWindows = nil;
+    });
+}
+
 extern "C" bool MacSetPrivacyMode(bool on) {
     std::lock_guard<std::mutex> lock(g_privacyModeMutex);
     if (on) {
@@ -811,6 +895,15 @@ extern "C" bool MacSetPrivacyMode(bool on) {
         if (!SetupEventTapOnMainThread()) {
             return false;
         }
+
+        // PCNET-IT: mostrar a tela "Modo Suporte" com um overlay opaco em ecra
+        // inteiro, EM VEZ de escurecer por gamma. O gamma preto tornaria o overlay
+        // invisivel (afeta toda a saida do ecra); o overlay cobre o desktop e o
+        // event tap acima ja bloqueia o input local. Ignoramos, de proposito, o
+        // registo do callback de reconfig e todo o bloco de gamma abaixo.
+        ShowSupportOverlay();
+        g_privacyModeActive = true;
+        return true;
 
         // 2. Register display reconfiguration callback to handle hot-plug events
         CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback, NULL);
