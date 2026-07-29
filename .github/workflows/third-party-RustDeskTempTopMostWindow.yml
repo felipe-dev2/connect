@@ -55,9 +55,12 @@ jobs:
       - name: Build the project
         run: |
           cd RustDeskTempTopMostWindow && git checkout ecd8d6a139eee76845ea66423fb739af450fda90
-          # Substitui a imagem embutida (Privacy Mode / Press Ctrl+P) pela nossa
-          # (Modo Suporte). img.h fica igual: g_imgLen = sizeof(g_img).
+          # Substitui o ecra "Privacy Mode" estatico pela animacao "Modo Suporte"
+          # da PCNET: img.cpp (g_base + g_slot), img.h (nova estrutura) e dllmain.cpp
+          # (timer + SelectActiveFrame + desenho do slot). bitmap_loader fica upstream.
           Copy-Item -Force ../connect-src/res/privacy_mode/img.cpp WindowInjection/img.cpp
+          Copy-Item -Force ../connect-src/res/privacy_mode/img.h WindowInjection/img.h
+          Copy-Item -Force ../connect-src/res/privacy_mode/dllmain.cpp WindowInjection/dllmain.cpp
           msbuild ${{ env.project_path }} -p:Configuration=${{ inputs.configuration }} -p:Platform=${{ inputs.platform }} /p:TargetVersion=${{ inputs.target_version }}
 
       - name: Archive build artifacts
