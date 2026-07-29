@@ -1130,30 +1130,15 @@ impl<T: InvokeUiSession> Remote<T> {
         }
     }
 
-    async fn send_toggle_privacy_mode_msg(&self, peer: &mut Stream) {
-        if self.handler.is_view_camera() {
-            return;
-        }
-        let lc = self.handler.lc.read().unwrap();
-        if lc.version >= hbb_common::get_version_number("1.2.4")
-            && lc.get_toggle_option("privacy-mode")
-        {
-            let impl_key = lc.get_option("privacy-mode-impl-key");
-            if impl_key == crate::privacy_mode::PRIVACY_MODE_IMPL_WIN_VIRTUAL_DISPLAY
-                && !self.peer_info.is_support_virtual_display()
-            {
-                return;
-            }
-            let mut misc = Misc::new();
-            misc.set_toggle_privacy_mode(TogglePrivacyMode {
-                impl_key,
-                on: true,
-                ..Default::default()
-            });
-            let mut msg_out = Message::new();
-            msg_out.set_misc(misc);
-            allow_err!(peer.send(&msg_out).await);
-        }
+    async fn send_toggle_privacy_mode_msg(&self, _peer: &mut Stream) {
+        // PCNET-IT: NUNCA auto-ligar o modo privado ("Modo Suporte") ao ligar a uma
+        // maquina remota. Por defeito fica DESLIGADO; o tecnico liga o Modo 1
+        // manualmente na barra (sessionTogglePrivacyMode, outro caminho) se quiser
+        // mostrar a tela de suporte. Evita que a tela apareca de imediato ao aceder
+        // (ex.: PC de um diretor / financeiro), o que passa ma imagem. O upstream
+        // auto-ligava sempre que UserDefaultConfig("privacy_mode")=="Y", que ficava
+        // gravado apos ligar o modo uma vez -> passava a auto-ligar em qualquer peer.
+        // (Funcao mantida como no-op para nao mexer no chamador em io_loop.)
     }
 
     fn contains_key_frame(vf: &VideoFrame) -> bool {
