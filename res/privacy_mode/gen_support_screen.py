@@ -7,7 +7,7 @@
 # Fundo = o mesmo motivo do sistema (flutter/assets/pcnet_bg.jpg), bem clareado.
 # Uso: python3 gen_support_screen.py   (corre a partir de res/privacy_mode/)
 import os
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -21,8 +21,11 @@ scale = max(W / bg.width, H / bg.height)
 bg = bg.resize((int(bg.width * scale) + 1, int(bg.height * scale) + 1), Image.LANCZOS)
 bg = bg.crop(((bg.width - W) // 2, (bg.height - H) // 2,
              (bg.width - W) // 2 + W, (bg.height - H) // 2 + H))
-bg = Image.blend(bg, Image.new('RGB', (W, H), (255, 255, 255)), 0.90)
-bg = bg.filter(ImageFilter.GaussianBlur(3.0))
+# fundo ESCURO do sistema, como no arranque (nao clareado); leve escurecimento
+# so para dar contraste ao texto, mantendo o padrao visivel. Um desfoque suave
+# ajuda a legibilidade do texto e reduz muito o tamanho do PNG embutido.
+bg = ImageEnhance.Brightness(bg).enhance(0.82)
+bg = bg.filter(ImageFilter.GaussianBlur(1.4))
 
 canvas = bg.copy()
 draw = ImageDraw.Draw(canvas)
@@ -39,9 +42,10 @@ def center(text, font, y, fill):
     b = draw.textbbox((0, 0), text, font=font)
     draw.text(((W - (b[2] - b[0])) / 2, y), text, font=font, fill=fill)
 
-center(TITLE, f_title, 500, (26, 122, 60))
-draw.line([(W/2 - 380, 690), (W/2 + 380, 690)], fill=(26, 122, 60), width=3)
-center(SUBTITLE, f_sub, 760, (40, 48, 40))
+# cores para fundo escuro: titulo verde vivo, subtitulo quase branco
+center(TITLE, f_title, 500, (140, 220, 90))
+draw.line([(W/2 - 380, 690), (W/2 + 380, 690)], fill=(140, 220, 90), width=3)
+center(SUBTITLE, f_sub, 760, (235, 240, 235))
 
 png_path = os.path.join(HERE, 'support_screen.png')
 canvas.save(png_path, optimize=True)
