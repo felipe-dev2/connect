@@ -129,6 +129,9 @@ impl PrivacyMode for PrivacyModeImpl {
         state: Option<PrivacyModeState>,
     ) -> ResultType<()> {
         self.check_off_conn_id(conn_id)?;
+        // PCNET-IT: repor o cursor fisico (escondido no turn_on). Antes do unhook
+        // para repor mesmo que este falhe; Drop tambem passa por aqui.
+        crate::platform::windows::restore_system_cursor();
         super::win_input::unhook()?;
         let hwnds = find_privacy_hwnds()?;
         let hide_result = set_privacy_windows_visible(&hwnds, false);
@@ -353,6 +356,11 @@ impl PrivacyModeImpl {
                 };
                 self.conn_id = conn_id;
                 self.hwnd = *hwnd as _;
+                // PCNET-IT: esconder o cursor fisico do cliente enquanto o Modo
+                // Suporte esta activo (reposto em turn_off_privacy, que Drop tambem
+                // chama). Feito apos conn_id ficar definido para is_in_privacy_mode()
+                // ja ser true e o run_cursor congelar a forma sem apanhar o branco.
+                crate::platform::windows::hide_system_cursor();
                 Ok(())
             }
             Err(e) => {

@@ -864,6 +864,13 @@ static void ShowSupportOverlay() {
             [g_supportWindows addObject:win];
             [win release]; // o array passa a ser o unico dono
         }
+        // PCNET-IT: esconder o cursor fisico no cliente enquanto o Modo Suporte
+        // esta activo. O tecnico continua a ver a posicao/forma do cursor pelo
+        // canal proprio do RustDesk. CGDisplayHideCursor e' system-wide (nao
+        // depende de a app estar em foco, ao contrario de [NSCursor hide]) e e'
+        // reference-counted -> tem de ser 1:1 com o Show em HideSupportOverlay.
+        // O guard acima garante execucao unica por ativacao.
+        CGDisplayHideCursor(CGMainDisplayID());
     });
 }
 
@@ -873,6 +880,7 @@ static void HideSupportOverlay() {
         if (g_supportWindows == nil) {
             return;
         }
+        CGDisplayShowCursor(CGMainDisplayID()); // repor o cursor (1:1 com o Hide)
         for (NSWindow* win in g_supportWindows) {
             [win orderOut:nil];
             [win close];

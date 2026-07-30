@@ -232,6 +232,54 @@ impl Drop for IconInfo {
     }
 }
 
+// PCNET-IT: esconder/repor o cursor FISICO do sistema durante o Modo Suporte.
+// O cursor do SO e desenhado por cima do overlay topmost; como o input remoto do
+// tecnico move o cursor, ele aparece a mexer no ecra do cliente. Substituimos
+// TODOS os cursores do sistema por um transparente enquanto o modo esta activo e
+// repomos os originais ao sair. O tecnico continua a ver a posicao e a ultima
+// forma real do cursor (ver o gate em server::input_service::run_cursor).
+// IDs OCR_* dos cursores do sistema (winuser).
+const PCNET_OCR_IDS: [u32; 14] = [
+    32512, 32513, 32514, 32515, 32516, 32642, 32643, 32644, 32645, 32646, 32648,
+    32649, 32650, 32651,
+];
+
+pub fn hide_system_cursor() {
+    unsafe {
+        // Cursor 32x32 totalmente transparente: mascara AND=1 (0xFF) + XOR=0 (0x00).
+        let and_mask = [0xFFu8; 128]; // 32 linhas * 4 bytes
+        let xor_mask = [0x00u8; 128];
+        let blank = CreateCursor(
+            std::ptr::null_mut(),
+            0,
+            0,
+            32,
+            32,
+            and_mask.as_ptr() as _,
+            xor_mask.as_ptr() as _,
+        );
+        if blank.is_null() {
+            return;
+        }
+        // SetSystemCursor DESTROI o handle que recebe -> passar uma copia nova por id.
+        for id in PCNET_OCR_IDS.iter() {
+            let c = CopyIcon(blank);
+            if !c.is_null() {
+                SetSystemCursor(c, *id);
+            }
+        }
+        DestroyCursor(blank);
+    }
+}
+
+pub fn restore_system_cursor() {
+    unsafe {
+        // Recarrega os cursores por omissao do sistema a partir do registo.
+        // SPI_SETCURSORS = 0x0057, SPIF_SENDCHANGE = 0x0002.
+        SystemParametersInfoW(0x0057, 0, std::ptr::null_mut(), 0x0002);
+    }
+}
+
 // https://github.com/TurboVNC/tightvnc/blob/a235bae328c12fd1c3aed6f3f034a37a6ffbbd22/vnc_winsrc/winvnc/vncEncoder.cpp
 // https://github.com/TigerVNC/tigervnc/blob/master/win/rfb_win32/DeviceFrameBuffer.cxx
 pub fn get_cursor_data(hcursor: u64) -> ResultType<CursorData> {

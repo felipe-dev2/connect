@@ -394,7 +394,16 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
 
 fn run_cursor(sp: MouseCursorService, state: &mut StateCursor) -> ResultType<()> {
     if let Some(hcursor) = crate::get_cursor()? {
-        if hcursor != state.hcursor {
+        // PCNET-IT: no Modo Suporte (Windows) o cursor do sistema e substituido por
+        // um transparente (platform::hide_system_cursor), por isso get_cursor()
+        // devolve o cursor em branco. NAO actualizar a forma: o tecnico mantem a
+        // ULTIMA forma real (state.cursor_data), e a posicao continua a ser enviada
+        // por run_pos -> o tecnico ve o cursor a mexer, o cliente nao ve cursor.
+        #[cfg(windows)]
+        let freeze = crate::privacy_mode::is_in_privacy_mode();
+        #[cfg(not(windows))]
+        let freeze = false;
+        if !freeze && hcursor != state.hcursor {
             let msg;
             if let Some(cached) = state.cached_cursor_data.get(&hcursor) {
                 super::log::trace!("Cursor data cached, hcursor: {}", hcursor);

@@ -41,7 +41,7 @@ bgcrop = base.crop((SLOT_X, SLOT_Y, SLOT_X + SLOT, SLOT_Y + SLOT)).convert('RGBA
 logo = Image.open(os.path.join(HERE, 'logo.png')).convert('RGBA').resize((SLOT, SLOT), Image.LANCZOS)
 gif = Image.open(os.path.join(HERE, 'servico-tecnico.gif'))   # animacao-fonte versionada no repo
 gear = [fr.convert('RGBA').resize((SLOT, SLOT), Image.LANCZOS)
-        for i, fr in enumerate(ImageSequence.Iterator(gif)) if i % 12 == 0]   # ~15 frames
+        for i, fr in enumerate(ImageSequence.Iterator(gif)) if i % 4 == 0]   # ~45 frames
 
 def opaque(elem_rgba):
     """funde o elemento (RGBA) sobre o pedaco do fundo -> RGB opaco 300x300."""
@@ -59,17 +59,26 @@ def flip(A, B, K=6):
         out.append(c)
     return out
 
-frames = []
-frames += [logo] * 6                 # logo fixa (hold)
-frames += flip(logo, gear[0])        # gira -> gif
-frames += gear                       # animacao toca
-frames += flip(gear[-1], logo)       # gira -> logo
+# Sequencia com tempos POR-FRAME (o giro e' rapido; a logo e o gear ficam ~8s cada).
+# No Windows a DLL le estes delays do GIF (PropertyTagFrameDelay); no macOS o
+# NSImageView respeita-os nativamente.
+HOLD_MS = 8000          # tempo que a logo (e o gear) ficam visiveis
+FLIP_MS = 55            # cada frame do giro (transicao rapida)
+frames, durations = [], []
+fl1 = flip(logo, gear[0])
+fl2 = flip(gear[-1], logo)
+gear_ms = max(40, HOLD_MS // len(gear))   # gear distribui ~8s pelos seus frames
+
+frames.append(logo);          durations.append(HOLD_MS)      # logo fixa 8s
+frames += fl1;                durations += [FLIP_MS] * len(fl1)   # gira -> gear
+frames += gear;               durations += [gear_ms] * len(gear)  # gear anima ~8s
+frames += fl2;                durations += [FLIP_MS] * len(fl2)   # gira -> logo
 frames_rgb = [opaque(f) for f in frames]
 
-# ---- guardar GIF do slot (opaco) ----
+# ---- guardar GIF do slot (opaco, com delays por-frame) ----
 slot_path = os.path.join(HERE, 'slot.gif')
 q = [f.quantize(colors=256, method=Image.FASTOCTREE) for f in frames_rgb]
-q[0].save(slot_path, save_all=True, append_images=q[1:], duration=90, loop=0, optimize=True)
+q[0].save(slot_path, save_all=True, append_images=q[1:], duration=durations, loop=0, optimize=True)
 
 # ---- guardar base PNG ----
 base_path = os.path.join(HERE, 'support_base.png')

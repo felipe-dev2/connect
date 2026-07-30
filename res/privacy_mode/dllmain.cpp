@@ -28,6 +28,30 @@ UINT g_slotFrameCount = 0;
 // bitmap existir (vive ate o processo terminar). Nunca e' libertado.
 IStream* g_slotStream = nullptr;
 const UINT_PTR PCNET_SLOT_TIMER_ID = 1;
+// Tempo (ms) de cada frame do gif do slot, lido do proprio gif
+// (PropertyTagFrameDelay). Permite tempos diferentes por frame: a logo fica ~8s,
+// o giro e' rapido, o gear anima ~8s. O frame a mostrar e' escolhido pelo tempo.
+std::vector<UINT> g_slotDelaysMs;
+UINT g_slotTotalMs = 0;
+// Back-buffer para desenhar a base + o frame do slot fora do ecra e copiar de uma
+// vez (double-buffering) -> elimina o piscar/quadrado preto.
+HDC g_memDC = nullptr;
+HBITMAP g_memBmp = nullptr;
+HGDIOBJ g_memOld = nullptr;
+int g_memW = 0, g_memH = 0;
+bool g_baseRendered = false;
+
+// Frame do slot a mostrar dado o tempo actual (respeita os delays por-frame do gif).
+static UINT PcnetSlotFrameForTime() {
+	if (g_slotTotalMs == 0 || g_slotFrameCount == 0) return 0;
+	DWORD t = GetTickCount() % g_slotTotalMs;
+	UINT acc = 0;
+	for (UINT i = 0; i < g_slotFrameCount && i < g_slotDelaysMs.size(); i++) {
+		acc += g_slotDelaysMs[i];
+		if (t < acc) return i;
+	}
+	return g_slotFrameCount - 1;
+}
 
 // Calcula, no espaco do ecra, o rectangulo do slot (usa a mesma escala/centragem
 // que OnPaintGdiPlus, que ajusta a base 1920x1080 ao cliente mantendo o aspeto).
@@ -791,6 +815,27 @@ DWORD WINAPI UwU(LPVOID lpParam)
 						g_slotBmp = bmp;
 						g_slotFrameCount = bmp->GetFrameCount(&PCNET_FRAME_DIM_TIME);
 						g_slotStream = pStream; // manter vivo p/ leitura lazy dos frames
+						// Ler os delays por-frame do gif (PropertyTagFrameDelay=0x5100),
+						// em unidades de 1/100 s. Se faltar, cai em 90ms uniforme.
+						const PROPID kFrameDelay = 0x5100;
+						long* delays = nullptr;
+						UINT navail = 0;
+						std::vector<char> propbuf;
+						UINT sz = g_slotBmp->GetPropertyItemSize(kFrameDelay);
+						if (sz > 0) {
+							propbuf.resize(sz);
+							Gdiplus::PropertyItem* pit = (Gdiplus::PropertyItem*)propbuf.data();
+							if (g_slotBmp->GetPropertyItem(kFrameDelay, sz, pit) == Gdiplus::Ok) {
+								delays = (long*)pit->value;
+								navail = (UINT)(pit->length / sizeof(long));
+							}
+						}
+						for (UINT fi = 0; fi < g_slotFrameCount; fi++) {
+							UINT ms = (fi < navail) ? (UINT)delays[fi] * 10u : 90u; // 1/100s -> ms
+							if (ms < 20u) ms = 90u; // 0 => "o mais rapido"; usamos 90ms
+							g_slotDelaysMs.push_back(ms);
+							g_slotTotalMs += ms;
+						}
 					}
 					else
 					{
@@ -899,48 +944,88 @@ VOID OnPaintGdiPlus(HWND hwnd, HDC hdc)
 	}
 
 	auto bitmap = g_bitmapLoader.GetBitmap();
-	if (bitmap)
+	if (!bitmap)
 	{
-		RECT rcClient;
-		if (FALSE == GetClientRect(hwnd, &rcClient))
+		return;
+	}
+
+	RECT rcClient;
+	if (FALSE == GetClientRect(hwnd, &rcClient))
+	{
+		return;
+	}
+	const int cw = rcClient.right - rcClient.left;
+	const int ch = rcClient.bottom - rcClient.top;
+	if (cw <= 0 || ch <= 0)
+	{
+		return;
+	}
+
+	// PCNET-IT: double-buffering. Desenhamos a base (uma vez) e o frame do slot
+	// num back-buffer fora do ecra e copiamos com um unico BitBlt -> sem piscar
+	// (o Clear preto ia directo ao ecra e piscava). O back-buffer e' reutilizado;
+	// so se recria se o tamanho do cliente mudar.
+	if (g_memDC == nullptr || g_memW != cw || g_memH != ch)
+	{
+		if (g_memDC != nullptr)
 		{
+			SelectObject(g_memDC, g_memOld);
+			DeleteObject(g_memBmp);
+			DeleteDC(g_memDC);
+			g_memDC = nullptr; g_memBmp = nullptr;
+		}
+		HDC screen = GetDC(nullptr);
+		g_memDC = CreateCompatibleDC(screen);
+		g_memBmp = CreateCompatibleBitmap(screen, cw, ch);
+		ReleaseDC(nullptr, screen);
+		if (g_memDC == nullptr || g_memBmp == nullptr)
+		{
+			if (g_memBmp) { DeleteObject(g_memBmp); g_memBmp = nullptr; }
+			if (g_memDC) { DeleteDC(g_memDC); g_memDC = nullptr; }
 			return;
 		}
-
-		Gdiplus::Graphics graphics(hdc);
-		graphics.Clear(Gdiplus::Color::Black);
-
-		const auto client_w = static_cast<Gdiplus::REAL>(rcClient.right - rcClient.left);
-		const auto client_h = static_cast<Gdiplus::REAL>(rcClient.bottom - rcClient.top);
-		const auto bmp_w = static_cast<Gdiplus::REAL>(bitmap->GetWidth());
-		const auto bmp_h = static_cast<Gdiplus::REAL>(bitmap->GetHeight());
-		const auto scale_w = client_w / bmp_w;
-		const auto scale_h = client_h / bmp_h;
-		const auto scale = scale_w < scale_h ? scale_w : scale_h;
-		const auto dest_w = bmp_w * scale;
-		const auto dest_h = bmp_h * scale;
-		const auto dest_x = (client_w - dest_w) / 2.0f;
-		const auto dest_y = (client_h - dest_h) / 2.0f;
-		const Gdiplus::RectF dest = Gdiplus::RectF(dest_x, dest_y, dest_w, dest_h);
-
-		graphics.DrawImage(bitmap, dest);
-
-		// PCNET-IT: desenha o frame actual da animacao do slot por cima da base,
-		// no mesmo espaco/escala. O frame e escolhido pelo tempo (consistente
-		// entre monitores, sem indice partilhado a avancar em corrida).
-		if (g_slotBmp != nullptr && g_slotFrameCount > 0)
-		{
-			const DWORD delay = static_cast<DWORD>(g_slotDelayMs > 0 ? g_slotDelayMs : 90);
-			const UINT frame = static_cast<UINT>((GetTickCount() / delay) % g_slotFrameCount);
-			g_slotBmp->SelectActiveFrame(&PCNET_FRAME_DIM_TIME, frame);
-			const Gdiplus::RectF slotDest(
-				dest_x + g_slotX * scale,
-				dest_y + g_slotY * scale,
-				g_slotW * scale,
-				g_slotH * scale);
-			graphics.DrawImage(g_slotBmp, slotDest);
-		}
+		g_memOld = SelectObject(g_memDC, g_memBmp);
+		g_memW = cw; g_memH = ch;
+		g_baseRendered = false;
 	}
+
+	const auto client_w = static_cast<Gdiplus::REAL>(cw);
+	const auto client_h = static_cast<Gdiplus::REAL>(ch);
+	const auto bmp_w = static_cast<Gdiplus::REAL>(bitmap->GetWidth());
+	const auto bmp_h = static_cast<Gdiplus::REAL>(bitmap->GetHeight());
+	const auto scale_w = client_w / bmp_w;
+	const auto scale_h = client_h / bmp_h;
+	const auto scale = scale_w < scale_h ? scale_w : scale_h;
+	const auto dest_w = bmp_w * scale;
+	const auto dest_h = bmp_h * scale;
+	const auto dest_x = (client_w - dest_w) / 2.0f;
+	const auto dest_y = (client_h - dest_h) / 2.0f;
+
+	// Base desenhada UMA vez no back-buffer (nao muda).
+	if (!g_baseRendered)
+	{
+		Gdiplus::Graphics g(g_memDC);
+		g.Clear(Gdiplus::Color::Black);
+		g.DrawImage(bitmap, Gdiplus::RectF(dest_x, dest_y, dest_w, dest_h));
+		g_baseRendered = true;
+	}
+
+	// Frame actual do slot por cima (opaco -> cobre o frame anterior). O frame e'
+	// escolhido pelo tempo, respeitando os delays por-frame do gif.
+	if (g_slotBmp != nullptr && g_slotFrameCount > 0)
+	{
+		g_slotBmp->SelectActiveFrame(&PCNET_FRAME_DIM_TIME, PcnetSlotFrameForTime());
+		Gdiplus::Graphics g(g_memDC);
+		g.DrawImage(g_slotBmp, Gdiplus::RectF(
+			dest_x + g_slotX * scale,
+			dest_y + g_slotY * scale,
+			g_slotW * scale,
+			g_slotH * scale));
+	}
+
+	// Copia atomica do back-buffer para o ecra (clip = regiao invalidada; nos
+	// ticks so o slot e' copiado). Sem Clear no hdc do ecra -> sem piscar.
+	BitBlt(hdc, 0, 0, cw, ch, g_memDC, 0, 0, SRCCOPY);
 }
 
 #ifdef WINDOWINJECTION_EXPORTS

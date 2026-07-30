@@ -11,22 +11,35 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
-MW, MH = 1280, 720                       # NSImageView escala p/ o ecra; menor => header menor
+MW, MH = 960, 540                        # NSImageView escala p/ o ecra; menor => header menor
 SLOT_X, SLOT_Y = 810, 150
 
 base = Image.open(os.path.join(HERE, 'support_base.png')).convert('RGB')  # 1920x1080 sem logo
 slot = Image.open(os.path.join(HERE, 'slot.gif'))
 
 frames = []
-for i in range(0, slot.n_frames, 2):      # subamostra p/ ~metade (header menor)
-    slot.seek(i)
+# Mantem TODOS os frames e os delays por-frame do slot (o NSImageView respeita-os
+# nativamente -> logo ~8s, giro rapido, gear ~8s, igual ao Windows).
+from PIL import ImageSequence
+durations = []
+for fr in ImageSequence.Iterator(slot):
     f = base.copy()
-    f.paste(slot.convert('RGB'), (SLOT_X, SLOT_Y))
+    f.paste(fr.convert('RGB'), (SLOT_X, SLOT_Y))
     frames.append(f.resize((MW, MH), Image.LANCZOS))
+    durations.append(fr.info.get('duration', 90))
 
 gif_path = os.path.join(HERE, 'mac_support.gif')
-q = [f.quantize(colors=256, method=Image.FASTOCTREE) for f in frames]
-q[0].save(gif_path, save_all=True, append_images=q[1:], duration=90, loop=0, optimize=True)
+# Paleta PARTILHADA por todos os frames -> o GIF guarda so as diferencas entre
+# frames (a maioria muda so na regiao do slot) => ficheiro muito menor.
+# A paleta e' construida de uma amostra com logo E com gear, para ter tanto os
+# verdes/logo como o azul/amarelo do gear (senao o gear sairia cinzento).
+sample = Image.new('RGB', (MW, MH * 2))
+sample.paste(frames[0], (0, 0))                    # fase logo
+sample.paste(frames[len(frames) // 2], (0, MH))    # fase gear
+pal = sample.quantize(colors=256, method=Image.FASTOCTREE)
+q = [f.quantize(palette=pal, dither=Image.NONE) for f in frames]
+q[0].save(gif_path, save_all=True, append_images=q[1:], duration=durations,
+          loop=0, optimize=True, disposal=1)
 
 data = open(gif_path, 'rb').read()
 lines = ['// GERADO por res/privacy_mode/gen_mac_support.py -- NAO editar a mao.',
