@@ -163,14 +163,16 @@ fn check_update(manually: bool) -> ResultType<()> {
     let sig_b64 = client.get(&sig_url).send()?.error_for_status()?.text()?;
 
     // 2) verificar a assinatura Ed25519 com a chave publica embutida.
+    // O CI produz uma assinatura destacada de 64B (PyNaCl .signature). A forma
+    // "attached" do libsodium e' exatamente (assinatura || mensagem), por isso
+    // reconstruimo-la e usamos sign::verify — mesmo padrao de custom_server.rs
+    // (o sodiumoxide 0.2.7 removeu Signature::from_slice).
     {
         use hbb_common::base64::{engine::general_purpose::STANDARD, Engine as _};
         use hbb_common::sodiumoxide::crypto::sign;
-        let sig_bytes = STANDARD.decode(sig_b64.trim())?;
-        let Some(sig) = sign::Signature::from_slice(&sig_bytes) else {
-            bail!("PCNET update: assinatura mal formada");
-        };
-        if !sign::verify_detached(&sig, &manifest_bytes, &sign::PublicKey(PCNET_UPDATE_PK)) {
+        let mut signed = STANDARD.decode(sig_b64.trim())?;
+        signed.extend_from_slice(&manifest_bytes);
+        if sign::verify(&signed, &sign::PublicKey(PCNET_UPDATE_PK)).is_err() {
             bail!("PCNET update: assinatura do manifesto invalida");
         }
     }
