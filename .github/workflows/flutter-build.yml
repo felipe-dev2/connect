@@ -913,6 +913,83 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: PCNET-IT-Connect-${{ env.VERSION }}-unsigned.tar.gz
 
+  # PCNET-IT: gera e assina o manifesto de auto-update. Corre depois das builds de
+  # Windows/macOS, baixa os instaladores do release, calcula os sha256, monta o
+  # manifest.json (versao + ficheiros) e assina-o com a chave Ed25519 (segredo
+  # UPDATE_SIGNING_SEED). O cliente verifica a assinatura com a chave publica
+  # embutida antes de instalar. Corre desde que pelo menos uma plataforma tenha
+  # sido construida (o manifesto reflecte TODOS os instaladores no release).
+  publish-update-manifest:
+    needs: [build-for-windows-flutter, build-for-macOS]
+    if: ${{ always() && inputs.upload-artifact && (needs.build-for-windows-flutter.result == 'success' || needs.build-for-macOS.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar instaladores do release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p up && cd up
+          gh release download "${{ env.TAG_NAME }}" --repo "${{ github.repository }}" \
+            --pattern "PCNET-IT-Connect-*.exe" \
+            --pattern "PCNET-IT-Connect-*.msi" \
+            --pattern "PCNET-IT-Connect-*.dmg" \
+            --dir . --clobber || true
+          ls -la
+
+      - name: Gerar e assinar manifest.json
+        env:
+          VERSION: ${{ env.VERSION }}
+          SEED_B64: ${{ secrets.UPDATE_SIGNING_SEED }}
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q python3-nacl
+          cd up
+          python3 - <<'PY'
+          import os, json, hashlib, base64
+          from nacl.signing import SigningKey
+          VERSION = os.environ["VERSION"]
+          def sha(f):
+              h = hashlib.sha256()
+              with open(f, "rb") as fh:
+                  for b in iter(lambda: fh.read(1 << 20), b""):
+                      h.update(b)
+              return h.hexdigest()
+          def arch_of(n):
+              nl = n.lower()
+              if "aarch64" in nl or "arm64" in nl: return "aarch64"
+              if nl.endswith("-x86.exe") or "-x86-" in nl: return "x86"
+              return "x86_64"
+          files = []
+          for name in sorted(os.listdir(".")):
+              if not name.startswith("PCNET-IT-Connect-"): continue
+              nl = name.lower()
+              if "sciter" in nl: continue
+              if nl.endswith(".exe"):
+                  files.append({"platform":"windows","arch":arch_of(name),"kind":"exe","name":name,"sha256":sha(name)})
+              elif nl.endswith(".msi"):
+                  files.append({"platform":"windows","arch":arch_of(name),"kind":"msi","name":name,"sha256":sha(name)})
+              elif nl.endswith(".dmg"):
+                  files.append({"platform":"macos","arch":arch_of(name),"kind":"dmg","name":name,"sha256":sha(name)})
+          if not files:
+              raise SystemExit("Nenhum instalador PCNET-IT-Connect encontrado no release")
+          manifest = {"version": VERSION, "files": files}
+          # bytes deterministicos: e' isto que e' assinado E o que o cliente verifica
+          data = json.dumps(manifest, separators=(",", ":"), sort_keys=True).encode()
+          open("manifest.json", "wb").write(data)
+          seed = base64.b64decode(os.environ["SEED_B64"])
+          sig = SigningKey(seed).sign(data).signature
+          open("manifest.json.sig", "wb").write(base64.b64encode(sig))
+          print(data.decode())
+          PY
+
+      - name: Publicar manifesto no release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            up/manifest.json
+            up/manifest.json.sig
+
   build-rustdesk-android:
     if: ${{ !inputs.windows_only && !inputs.macos_only }}
     needs: [generate-bridge]
