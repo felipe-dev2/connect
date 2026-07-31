@@ -2084,6 +2084,15 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 }
 
 pub fn load_custom_client() {
+    // PCNET-IT: forcar o api-server em TODAS as builds -> o check-in (heartbeat/sysinfo) e o
+    // auto-update apontam para o console. OVERWRITE = imutavel pelo utilizador (campo cinzento
+    // na UI). "connect.pcnet-it.com" nao e' publico (is_public()=false), por isso o heartbeat
+    // corre. Nao mexer em "register-device" (deixar ausente) ou o heartbeat e' desligado.
+    config::OVERWRITE_SETTINGS
+        .write()
+        .unwrap()
+        .insert("api-server".to_string(), "http://connect.pcnet-it.com:82".to_string());
+
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
