@@ -1,0 +1,27 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+	<!--
+	  PCNET-IT: limpeza TOTAL da configuracao ao DESINSTALAR.
+
+	  O RustDesk deixa a configuracao de proposito quando o produto e desinstalado.
+	  Esta custom action apaga a pasta de config "PCNET-IT-Connect" (igual a APP_NAME
+	  em libs/hbb_common/src/config.rs) em todos os sitios onde o cliente a grava:
+	    . %APPDATA%\PCNET-IT-Connect de cada perfil de utilizador (e Local);
+	    . o perfil do SERVICO (LocalService, e systemprofile por seguranca);
+	    . %ProgramData%\PCNET-IT-Connect.
+
+	  deferred + Impersonate=no : corre como SYSTEM, apaga a config de todos.
+	  Return=ignore             : uma falha NUNCA bloqueia a desinstalacao.
+	  So dispara em desinstalacao REAL (ver a condicao no Package.wxs), nunca num
+	  upgrade, senao um update perderia a configuracao.
+
+	  Se um dia mudar o APP_NAME, actualizar o nome da pasta aqui.
+	  A CA e definida aqui mas SEQUENCIADA no Package.wxs (elemento Custom): e
+	  essa referencia que faz o linker do WiX incluir este fragmento.
+	-->
+	<Fragment>
+		<CustomAction Id="PcnetCleanConfig"
+			Directory="TARGETDIR"
+			Execute="deferred" Impersonate="no" Return="ignore"
+			ExeCommand="cmd.exe /c rd /s /q &quot;%ProgramData%\PCNET-IT-Connect&quot; 2&gt;nul &amp; rd /s /q &quot;%windir%\ServiceProfiles\LocalService\AppData\Roaming\PCNET-IT-Connect&quot; 2&gt;nul &amp; rd /s /q &quot;%windir%\ServiceProfiles\NetworkService\AppData\Roaming\PCNET-IT-Connect&quot; 2&gt;nul &amp; rd /s /q &quot;%windir%\system32\config\systemprofile\AppData\Roaming\PCNET-IT-Connect&quot; 2&gt;nul &amp; for /d %U in (&quot;%SystemDrive%\Users\*&quot;) do (rd /s /q &quot;%U\AppData\Roaming\PCNET-IT-Connect&quot; 2&gt;nul &amp; rd /s /q &quot;%U\AppData\Local\PCNET-IT-Connect&quot; 2&gt;nul)" />
+	</Fragment>
+</Wix>

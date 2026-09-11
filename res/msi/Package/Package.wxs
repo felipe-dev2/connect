@@ -33,6 +33,10 @@
 			<!--Only do InstallValidate if is Install-->
 			<InstallValidate Condition="NOT Installed" />
 
+			<!-- PCNET-IT: apagar toda a configuracao deixada para tras, so numa desinstalacao real.
+			     A CA esta definida em Fragments/CleanUninstall.wxs; esta referencia liga o fragmento. -->
+			<Custom Action="PcnetCleanConfig" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+
 		</InstallExecuteSequence>
 
 		<MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes" />
