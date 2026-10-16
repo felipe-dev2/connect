@@ -214,6 +214,11 @@ const String kOptionKeepScreenOn = "keep-screen-on";
 const String kOptionKeepAwakeDuringIncomingSessions = "keep-awake-during-incoming-sessions";
 const String kOptionKeepAwakeDuringOutgoingSessions = "keep-awake-during-outgoing-sessions";
 
+// macOS: icone a cores na barra de menus em vez do glifo monocromatico (template).
+// Prefixo "allow-" de proposito: option2bool() le o valor por definir como falso,
+// por isso o predefinido continua a ser o icone monocromatico.
+const String kOptionAllowColoredTrayIcon = "allow-colored-tray-icon";
+
 const String kOptionShowMobileAction = "showMobileActions";
 
 const String kUrlActionClose = "close";

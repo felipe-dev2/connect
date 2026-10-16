@@ -279,6 +279,18 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("wayland-soft-keyboard-input-label", "Soft keyboard input"),
         ("wayland-keyboard-input-reset-choice-tip", "Reset keyboard input choice"),
         ("remember-wayland-keyboard-choice-tip", "Don't ask again for this remote computer"),
-        ("conn-e2ee-unavailable-tip", "Could not verify end-to-end encryption.\nThe remote device may still be setting up. Try again later.\nIf this keeps happening, the server may be untrusted.\nContinue anyway?")
+        ("conn-e2ee-unavailable-tip", "Could not verify end-to-end encryption.\nThe remote device may still be setting up. Try again later.\nIf this keeps happening, the server may be untrusted.\nContinue anyway?"),
+        ("colored-tray-icon-label", "Coloured icon in the menu bar"),
+        ("colored-tray-icon-tip", "Show the brand's green badge in the menu bar instead of the monochrome glyph. The monochrome icon follows light and dark menu bars; the coloured one always looks the same. The change takes effect in about a second, with no restart and no reinstall."),
+        ("mac-permissions-title", "macOS permissions"),
+        ("mac-permissions-tip", "macOS asks for three permissions before this Mac can be controlled. Grant all of them here: click Configure on each line and tick this app in System Settings. This panel updates on its own."),
+        ("mac-permissions-progress", "Permissions granted"),
+        ("mac-permissions-screen-desc", "Lets the technician see the screen of this Mac. Without it the session connects but shows nothing."),
+        ("mac-permissions-acc-desc", "Lets the technician move the pointer and click on this Mac."),
+        ("mac-permissions-input-desc", "Lets the technician type on this Mac with the keyboard."),
+        ("mac-permissions-restart-tip", "After ticking the box in System Settings, Screen Recording and Input Monitoring only take effect once this app has quit and opened again. If the line stays red, quit the app and open it again."),
+        ("mac-permissions-steps-tip", "The panel stays up until all three are granted. You can close it to see what is behind it and open it again from the notice on the home page."),
+        ("mac-permissions-all-granted-tip", "Every permission granted. You can now install the system service on the home page."),
+        ("mac-permissions-pending-tip", "This Mac is still missing macOS permissions. Open the panel to see which ones and grant them."),
     ].iter().cloned().collect();
 }

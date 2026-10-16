@@ -3045,6 +3045,11 @@ pub mod keys {
     pub const OPTION_KEEP_AWAKE_DURING_OUTGOING_SESSIONS: &str =
         "keep-awake-during-outgoing-sessions";
 
+    // macOS only: paint the menu bar icon with the brand colours instead of using
+    // the monochrome template glyph. "allow-" prefix on purpose: option2bool() then
+    // reads an unset value as false, so the default stays the template icon.
+    pub const OPTION_ALLOW_COLORED_TRAY_ICON: &str = "allow-colored-tray-icon";
+
     pub const OPTION_DISABLE_GROUP_PANEL: &str = "disable-group-panel";
     pub const OPTION_DISABLE_DISCOVERY_PANEL: &str = "disable-discovery-panel";
     pub const OPTION_PRE_ELEVATE_SERVICE: &str = "pre-elevate-service";
@@ -3130,6 +3135,7 @@ pub mod keys {
         OPTION_SHOW_VIRTUAL_JOYSTICK,
         OPTION_ENABLE_FLUTTER_HTTP_ON_RUST,
         OPTION_ALLOW_ASK_FOR_NOTE,
+        OPTION_ALLOW_COLORED_TRAY_ICON,
     ];
     // DEFAULT_SETTINGS, OVERWRITE_SETTINGS
     pub const KEYS_SETTINGS: &[&str] = &[

@@ -853,6 +853,11 @@ class OverlayDialogManager {
     _dialogs.clear();
   }
 
+  /// PCNET-IT: ha algum dialogo no ecra? Usado para o painel das permissoes do
+  /// macOS nao se reabrir por cima de uma mensagem que o tecnico tem de ler --
+  /// msgBox() chama dismissAll(), e a reabertura entrava DEPOIS da mensagem.
+  bool get hasDialog => _dialogs.isNotEmpty;
+
   void dismissByTag(String tag) {
     _dialogs[tag]?.complete(null);
     _dialogs.remove(tag);

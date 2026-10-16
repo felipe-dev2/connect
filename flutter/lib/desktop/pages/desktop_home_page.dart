@@ -12,6 +12,7 @@ import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/connection_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
+import 'package:flutter_hbb/desktop/widgets/mac_permissions_dialog.dart';
 import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/server_model.dart';
@@ -44,11 +45,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   var systemError = '';
   StreamSubscription? _uniLinksSubscription;
   var svcStopped = false.obs;
-  var watchIsCanScreenRecording = false;
-  var watchIsProcessTrust = false;
-  var watchIsInputMonitoring = false;
   var watchIsInstalledDaemon = false;
   var watchIsCanRecordAudio = false;
+  // PCNET-IT: as tres permissoes obrigatorias do macOS deixaram de ser cartoes
+  // em cadeia (um de cada vez, na coluna da esquerda) e passaram a um painel
+  // unico ao centro, com as tres de uma vez e o estado de cada uma a vista --
+  // ver desktop/widgets/mac_permissions_dialog.dart. Por isso cairam as flags
+  // watchIsCanScreenRecording / watchIsProcessTrust / watchIsInputMonitoring:
+  // eram travoes de um disparo, que so reliam a permissao depois de um clique
+  // no cartao. O estado passa a ser relido sempre no temporizador de 1 s.
+  // _macPermissionsAllGranted guarda a ultima leitura, para so reconstruir
+  // quando muda; _macPermissionsDismissed diz que o tecnico fechou o painel a
+  // mao -- dai so volta a abrir pelo aviso da coluna da esquerda;
+  // _macPermissionsFirstFrame trava a abertura antes da primeira pintura,
+  // enquanto ainda nao ha Overlay onde o dialogo entre.
+  var _macPermissionsAllGranted = macPermissionsAllGranted();
+  var _macPermissionsDismissed = false;
+  var _macPermissionsFirstFrame = false;
   Timer? _updateTimer;
   bool isCardClosed = false;
 
@@ -520,23 +533,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       }
     } else if (isMacOS) {
       final isOutgoingOnly = bind.isOutgoingOnly();
-      if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
-        return buildInstallCard("Permissions", "config_screen", "Configure",
+      if (!_macPermissionsAllGranted) {
+        // O trabalho e feito pelo painel ao centro, com as tres permissoes de
+        // uma vez. Isto aqui e so o aviso discreto que o reabre depois de o
+        // tecnico o fechar a mao -- e que lhe lembra que ainda falta algo.
+        return buildInstallCard(
+            "Permissions", "mac-permissions-pending-tip", "Configure",
             () async {
-          bind.mainIsCanScreenRecording(prompt: true);
-          watchIsCanScreenRecording = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
-      } else if (!isOutgoingOnly && !bind.mainIsProcessTrusted(prompt: false)) {
-        return buildInstallCard("Permissions", "config_acc", "Configure",
-            () async {
-          bind.mainIsProcessTrusted(prompt: true);
-          watchIsProcessTrust = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
-      } else if (!bind.mainIsCanInputMonitoring(prompt: false)) {
-        return buildInstallCard("Permissions", "config_input", "Configure",
-            () async {
-          bind.mainIsCanInputMonitoring(prompt: true);
-          watchIsInputMonitoring = true;
+          _openMacPermissions();
         }, help: 'Help', link: translate("doc_mac_permission"));
       } else if (!isOutgoingOnly &&
           !svcStopped.value &&
@@ -760,26 +764,27 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         svcStopped.value = v;
         setState(() {});
       }
-      if (watchIsCanScreenRecording) {
-        if (bind.mainIsCanScreenRecording(prompt: false)) {
-          watchIsCanScreenRecording = false;
+      // PCNET-IT: no macOS releem-se sempre as tres permissoes obrigatorias, e
+      // nao so depois de um clique num cartao: o tecnico pode conceder (ou
+      // retirar) qualquer uma directamente nas Definicoes, e a coluna da
+      // esquerda tem de acompanhar. As chamadas sao sincronas e baratas
+      // (consultas ao TCC) -- o build ja as fazia a cada reconstrucao.
+      // Nota: a Monitorizacao de Entrada pode so fazer efeito depois de a app
+      // reiniciar; o painel avisa disso a quem acabou de a conceder.
+      if (isMacOS) {
+        final allGranted = macPermissionsAllGranted();
+        if (allGranted != _macPermissionsAllGranted) {
+          _macPermissionsAllGranted = allGranted;
           setState(() {});
         }
-      }
-      if (watchIsProcessTrust) {
-        if (bind.mainIsProcessTrusted(prompt: false)) {
-          watchIsProcessTrust = false;
-          setState(() {});
-        }
-      }
-      if (watchIsInputMonitoring) {
-        if (bind.mainIsCanInputMonitoring(prompt: false)) {
-          watchIsInputMonitoring = false;
-          // Do not notify for now.
-          // Monitoring may not take effect until the process is restarted.
-          // rustDeskWinManager.call(
-          //     WindowType.RemoteDesktop, kWindowDisableGrabKeyboard, '');
-          setState(() {});
+        if (!allGranted) {
+          // Enquanto faltar alguma, o painel tem de estar no ecra. Tentar de
+          // segundo a segundo cobre tudo o que o pode ter tirado de la: a
+          // primeira tentativa antes de haver Overlay, um msgBox (que faz
+          // dismissAll) ou uma permissao retirada nas Definicoes depois de
+          // tudo estar verde. _maybeOpenMacPermissions() nao insiste se o
+          // painel ja esta aberto nem se o tecnico o fechou a mao.
+          _maybeOpenMacPermissions();
         }
       }
       if (watchIsInstalledDaemon) {
@@ -915,6 +920,65 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       });
     }
     WidgetsBinding.instance.addObserver(this);
+    // PCNET-IT: o painel das permissoes abre-se por sua iniciativa, mas so
+    // depois da primeira pintura: antes dela o Overlay global ainda nao existe
+    // e o dialogo nao tinha onde entrar.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _macPermissionsFirstFrame = true;
+      _maybeOpenMacPermissions();
+    });
+  }
+
+  // PCNET-IT: abre o painel das permissoes do macOS se ainda faltar alguma.
+  // Nao insiste se o tecnico o fechou a mao: nesse caso fica o aviso discreto
+  // na coluna da esquerda, que e por onde se reabre.
+  void _maybeOpenMacPermissions() {
+    if (!isMacOS || !_macPermissionsFirstFrame) {
+      return;
+    }
+    if (_macPermissionsDismissed ||
+        isMacPermissionsDialogOpen() ||
+        macPermissionsAllGranted() ||
+        // Sem esta guarda, num build que esconda os cartoes de ajuda o painel
+        // recusa abrir mas ninguem marca nada, e isto pedia a abertura a cada
+        // segundo -- a pagina inteira a reconstruir-se a 1 Hz, para sempre.
+        macPermissionsPanelSuppressed() ||
+        // Nao reabrir por cima de uma mensagem: msgBox() faz dismissAll(), e a
+        // reabertura entraria no Overlay DEPOIS dela, tapando o que o tecnico
+        // tem de ler.
+        gFFI.dialogManager.hasDialog) {
+      return;
+    }
+    _openMacPermissions();
+  }
+
+  void _openMacPermissions() {
+    // Abrir o painel -- venha o pedido do temporizador ou do botao do aviso --
+    // volta a por em causa o "fechei a mao": se o tecnico o reabriu, quer-lo
+    // la outra vez.
+    _macPermissionsDismissed = false;
+    // O futuro nunca falha (showMacPermissionsDialog trata do erro) e diz como
+    // o painel fechou: true = ficaram todas concedidas, false = fechado a mao
+    // com alguma a faltar, null = nao abriu ou foi fechado por fora. So o
+    // false e decisao do tecnico, e so esse silencia o painel.
+    showMacPermissionsDialog().then((res) {
+      if (!mounted) {
+        return;
+      }
+      // res == null significa "nem abriu, ou foi fechado por fora": nada mudou
+      // por decisao do tecnico, e reconstruir a pagina nao traz nada.
+      if (res == null) {
+        return;
+      }
+      setState(() {
+        _macPermissionsAllGranted = macPermissionsAllGranted();
+        if (res == false) {
+          _macPermissionsDismissed = true;
+        } else if (res == true) {
+          _macPermissionsDismissed = false;
+        }
+      });
+    });
   }
 
   _updateWindowSize() {
@@ -936,6 +1000,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _uniLinksSubscription?.cancel();
     Get.delete<RxBool>(tag: 'stop-service');
     _updateTimer?.cancel();
+    // O painel vive no Overlay global, que sobrevive a esta pagina: sem isto
+    // ficava la um painel orfao, com o seu temporizador, e o guarda de
+    // instancia unica nunca mais deixava abrir outro.
+    dismissMacPermissionsDialog();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

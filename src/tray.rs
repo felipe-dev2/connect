@@ -60,6 +60,18 @@ fn make_tray() -> hbb_common::ResultType<()> {
     let icon = tray_icon::Icon::from_rgba(icon_rgba, icon_width, icon_height)
         .context("Failed to open icon")?;
 
+    // No macOS ha dois icones: o template (glifo vazado, que o AppKit pinta com a cor
+    // da barra) e o colorido (o disco verde da marca, desenhado tal e qual). Qual deles
+    // aparece e decidido pela opcao local, que pode mudar com o tray ja a correr.
+    #[cfg(target_os = "macos")]
+    let icon_template = icon.clone();
+    #[cfg(target_os = "macos")]
+    let icon_colored = load_tray_icon(include_bytes!("../res/mac-tray-color-x2.png"))?;
+    #[cfg(target_os = "macos")]
+    let mut colored_icon = is_colored_tray_icon();
+    #[cfg(target_os = "macos")]
+    let mut last_icon_check = std::time::Instant::now();
+
     let mut event_loop = EventLoopBuilder::new().build();
 
     let tray_menu = Menu::new();
@@ -158,7 +170,15 @@ fn make_tray() -> hbb_common::ResultType<()> {
                 .with_icon(icon.clone());
             #[cfg(target_os = "macos")]
             {
-                builder = builder.with_icon_as_template(true);
+                // Em modo template o AppKit descarta a cor e so usa o alfa: e por isso
+                // que o disco verde da marca exige desligar o template.
+                builder = builder
+                    .with_icon(if colored_icon {
+                        icon_colored.clone()
+                    } else {
+                        icon_template.clone()
+                    })
+                    .with_icon_as_template(!colored_icon);
             }
             #[cfg(target_os = "windows")]
             {
@@ -227,6 +247,28 @@ fn make_tray() -> hbb_common::ResultType<()> {
             }
         }
 
+        // Quem grava a opcao e o processo da interface; o tray vive no processo --server.
+        // Por isso lemos do ficheiro, e nao da cache em memoria, uma vez por segundo.
+        // A troca e feita a quente: nao e preciso reiniciar nada nem reinstalar.
+        #[cfg(target_os = "macos")]
+        if last_icon_check.elapsed() >= std::time::Duration::from_secs(1) {
+            last_icon_check = std::time::Instant::now();
+            let colored = is_colored_tray_icon();
+            if colored != colored_icon {
+                colored_icon = colored;
+                let new_icon = if colored {
+                    icon_colored.clone()
+                } else {
+                    icon_template.clone()
+                };
+                if let Some(tray) = _tray_icon.lock().unwrap().as_ref() {
+                    if let Err(err) = tray.set_icon_with_as_template(Some(new_icon), !colored) {
+                        log::error!("Failed to switch tray icon: {}", err);
+                    }
+                }
+            }
+        }
+
         #[cfg(windows)]
         if let Ok(data) = ipc_receiver.try_recv() {
             match data {
@@ -277,6 +319,30 @@ async fn start_query_session_count(sender: std::sync::mpsc::Sender<Data>) {
         }
         hbb_common::sleep(1.).await;
     }
+}
+
+// Constroi um icone do tray a partir de um PNG embutido no binario.
+#[cfg(target_os = "macos")]
+fn load_tray_icon(bytes: &[u8]) -> hbb_common::ResultType<tray_icon::Icon> {
+    use hbb_common::anyhow::Context;
+    let image = image::load_from_memory(bytes)
+        .context("Failed to open icon path")?
+        .into_rgba8();
+    let (width, height) = image.dimensions();
+    Ok(tray_icon::Icon::from_rgba(image.into_raw(), width, height)
+        .context("Failed to open icon")?)
+}
+
+// Le a opcao que escolhe o icone da barra de menus. Lemos com get_option_from_file e
+// nao com get_option porque a cache em memoria deste processo nunca veria a alteracao
+// gravada pelo processo da interface.
+#[cfg(target_os = "macos")]
+fn is_colored_tray_icon() -> bool {
+    use hbb_common::config::{keys, option2bool, LocalConfig};
+    option2bool(
+        keys::OPTION_ALLOW_COLORED_TRAY_ICON,
+        &LocalConfig::get_option_from_file(keys::OPTION_ALLOW_COLORED_TRAY_ICON),
+    )
 }
 
 #[cfg(not(target_os = "macos"))]

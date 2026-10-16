@@ -603,6 +603,21 @@ class _GeneralState extends State<_General> {
       ));
     }
 
+    // macOS: escolher entre o glifo monocromatico da barra de menus (modo template,
+    // que acompanha barras claras e escuras) e o disco verde da marca. So existe no
+    // macOS, porque so la ha modo template. O tray le a opcao e troca o icone sozinho.
+    if (isMacOS) {
+      children.add(Tooltip(
+        message: translate('colored-tray-icon-tip'),
+        child: _OptionCheckBox(
+          context,
+          'colored-tray-icon-label',
+          kOptionAllowColoredTrayIcon,
+          isServer: false,
+        ),
+      ));
+    }
+
     if (!isWeb && bind.mainShowOption(key: kOptionAllowLinuxHeadless)) {
       children.add(_OptionCheckBox(
           context, 'Allow linux headless', kOptionAllowLinuxHeadless));
