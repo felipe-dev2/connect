@@ -47,6 +47,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   var watchIsCanScreenRecording = false;
   var watchIsProcessTrust = false;
   var watchIsInputMonitoring = false;
+  var watchIsInstalledDaemon = false;
   var watchIsCanRecordAudio = false;
   Timer? _updateTimer;
   bool isCardClosed = false;
@@ -543,6 +544,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           !bind.mainIsInstalledDaemon(prompt: false)) {
         return buildInstallCard("", "install_daemon_tip", "Install", () async {
           bind.mainIsInstalledDaemon(prompt: true);
+          // mainIsInstalledDaemon(prompt: true) lanca o osascript numa thread e
+          // devolve false de imediato (platform/macos.rs), por isso o retorno
+          // nunca diz "instalado". Sem esta flag nada reconstroi o cartao e o
+          // aviso fica no ecra mesmo depois de a instalacao correr bem -- o
+          // tecnico clica outra vez, e outra. Mesmo molde dos cartoes de
+          // permissoes acima.
+          watchIsInstalledDaemon = true;
         });
       }
       //// Disable microphone configuration for macOS. We will request the permission when needed.
@@ -771,6 +779,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           // Monitoring may not take effect until the process is restarted.
           // rustDeskWinManager.call(
           //     WindowType.RemoteDesktop, kWindowDisableGrabKeyboard, '');
+          setState(() {});
+        }
+      }
+      if (watchIsInstalledDaemon) {
+        if (bind.mainIsInstalledDaemon(prompt: false)) {
+          watchIsInstalledDaemon = false;
           setState(() {});
         }
       }
