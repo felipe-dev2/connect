@@ -34,8 +34,12 @@
 			<InstallValidate Condition="NOT Installed" />
 
 			<!-- PCNET-IT: apagar toda a configuracao deixada para tras, so numa desinstalacao real.
-			     A CA esta definida em Fragments/CleanUninstall.wxs; esta referencia liga o fragmento. -->
-			<Custom Action="PcnetCleanConfig" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+			     A CA esta definida em Fragments/CleanUninstall.wxs; esta referencia liga o fragmento.
+			     TEM de correr depois de RemoveRuntimeGeneratedFiles: nessa altura o servico ja foi
+			     parado (TryStopDeleteService) e a app/tray ja foi terminada (TerminateProcesses).
+			     Com o servico vivo o "rd /s /q" falha nos ficheiros com handle aberto (o log e o
+			     RustDesk2.toml) e a limpeza fica a meio. Continua antes de RemoveFiles. -->
+			<Custom Action="PcnetCleanConfig" After="RemoveRuntimeGeneratedFiles" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
 
 		</InstallExecuteSequence>
 

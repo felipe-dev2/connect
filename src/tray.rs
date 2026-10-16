@@ -41,6 +41,15 @@ fn make_tray() -> hbb_common::ResultType<()> {
     }
 
     let (icon_rgba, icon_width, icon_height) = {
+        // On macOS the icon is drawn as a template: AppKit throws the colours away and paints
+        // every opaque pixel with the menu bar's foreground colour, so only the alpha channel
+        // is a shape. The app icon in flutter_assets is a full-bleed opaque badge, which comes
+        // out as a solid blob — keep the dedicated glyph in res/mac-tray-dark-x2.png there.
+        #[cfg(target_os = "macos")]
+        let image = image::load_from_memory(icon)
+            .context("Failed to open icon path")?
+            .into_rgba8();
+        #[cfg(not(target_os = "macos"))]
         let image = load_icon_from_asset()
             .unwrap_or(image::load_from_memory(icon).context("Failed to open icon path")?)
             .into_rgba8();
@@ -270,13 +279,12 @@ async fn start_query_session_count(sender: std::sync::mpsc::Sender<Data>) {
     }
 }
 
+#[cfg(not(target_os = "macos"))]
 fn load_icon_from_asset() -> Option<image::DynamicImage> {
     let Some(path) = std::env::current_exe().map_or(None, |x| x.parent().map(|x| x.to_path_buf()))
     else {
         return None;
     };
-    #[cfg(target_os = "macos")]
-    let path = path.join("../Frameworks/App.framework/Resources/flutter_assets/assets/icon.png");
     #[cfg(windows)]
     let path = path.join(r"data\flutter_assets\assets\icon.png");
     #[cfg(target_os = "linux")]
