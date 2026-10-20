@@ -3,6 +3,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "Estado"),
         ("Your Desktop", "Ambiente de Trabalho"),
+        ("pcnet_login_required_tip", "Entre com a sua conta para usar o programa."),
+        ("pcnet_login_offline_tip", "Não foi possível falar com o servidor."),
         ("desk_tip", "O seu Ambiente de Trabalho pode ser acedido com este ID e palavra-passe."),
         ("Password", "Senha"),
         ("Ready", "Pronto"),

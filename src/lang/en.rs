@@ -1,6 +1,8 @@
 lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
+        ("pcnet_login_required_tip", "Sign in with your account to use the program."),
+        ("pcnet_login_offline_tip", "Could not reach the server."),
         ("desk_tip", "Your desktop can be accessed with this ID and password."),
         ("connecting_status", "Connecting to the RustDesk network..."),
         ("not_ready_status", "Not ready. Please check your connection"),

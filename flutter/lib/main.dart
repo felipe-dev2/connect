@@ -7,6 +7,7 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/widgets/overlay.dart';
+import 'package:flutter_hbb/common/widgets/portao_acesso.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
 import 'package:flutter_hbb/desktop/pages/install_page.dart';
 import 'package:flutter_hbb/desktop/pages/server_page.dart';
@@ -507,7 +508,10 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           darkTheme: MyTheme.darkTheme,
           themeMode: MyTheme.currentThemeMode(),
           home: isDesktop
-              ? const DesktopTabPage()
+              // PCNET-IT: sem sessao valida no console, a janela principal nao
+              // abre. A build de Assistencia (do cliente) nao leva portao.
+              // Ver common/widgets/portao_acesso.dart.
+              ? const PortaoAcesso(filho: DesktopTabPage())
               : isWeb
                   ? WebHomePage()
                   : HomePage(),

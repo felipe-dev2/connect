@@ -30,6 +30,7 @@ import 'package:window_size/window_size.dart' as window_size;
 
 import '../consts.dart';
 import 'common/widgets/overlay.dart';
+import 'common/widgets/portao_acesso.dart';
 import 'mobile/pages/file_manager_page.dart';
 import 'mobile/pages/remote_page.dart';
 import 'mobile/pages/view_camera_page.dart';
@@ -2627,6 +2628,14 @@ connect(BuildContext context, String id,
     String? connToken,
     bool? isSharedPassword}) async {
   if (id == '') return;
+  // PCNET-IT: nenhuma ligacao de saida sem sessao valida no console.
+  // Este e' o unico sitio por onde passam os 7 pontos de entrada da interface
+  // (caixa de ID, cartao de par, barra da sessao, movel), por isso o portao
+  // fica aqui e nao em cada um deles. Uma maquina de CLIENTE nunca liga para
+  // fora, logo nunca chega aqui -- e e' por isso que isto pode estar ligado
+  // por omissao sem trancar as 23 maquinas ja' instaladas.
+  // Ver common/widgets/portao_acesso.dart.
+  if (!await podeLigar()) return;
   if (!isDesktop || desktopType == DesktopType.main) {
     try {
       if (Get.isRegistered<IDTextEditingController>()) {
