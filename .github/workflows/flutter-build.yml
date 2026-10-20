@@ -386,8 +386,16 @@ jobs:
             ./SignOutput/PCNET-IT-Connect-*.exe
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
+  #
+  # PCNET-IT: DESLIGADO em 20/10/2026. Falhava todas as noites no runner do
+  # GitHub -- o build script do hwcodec nao encontra o libclang em 32 bits
+  # ("Unable to find libclang ... set the LIBCLANG_PATH") -- e deixava a CI
+  # vermelha sem que nada do que usamos estivesse partido: os outros 22 jobs
+  # passavam e o .exe, o .msi e os dois .dmg eram publicados na mesma.
+  # Nenhum job depende deste (ver `needs:`), e nao ha Windows 32 bits na frota
+  # (o Windows 11 nem existe em 32 bits). Para voltar a ligar: repor o `if`.
   build-for-windows-sciter:
-    if: ${{ !inputs.windows_only && !inputs.macos_only }}
+    if: false
     name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     runs-on: ${{ matrix.job.os }}
     # Temporarily disable this action due to additional test is needed.
@@ -963,8 +971,22 @@ jobs:
               if not name.startswith("PCNET-IT-Connect-"): continue
               nl = name.lower()
               if "sciter" in nl: continue
+              # PCNET-IT: a variante de ATENDIMENTO (o que o cliente final baixa)
+              # tem de ter um kind PROPRIO. O updater escolhe o ficheiro com
+              #   .find(|f| f.platform == p && f.arch == a && f.kind == k)
+              # e k vale "exe"/"msi"/"dmg". Se a variante entrasse como "exe",
+              # uma maquina de cliente a correr a variante receberia o cliente
+              # COMPLETO na primeira actualizacao -- e passaria a poder ligar-se
+              # a outras maquinas. Com kind proprio, o .find() nunca lhe pega.
+              # O nome do ficheiro leva "-qs" por obrigacao do proprio codigo:
+              # is_quick_support_exe() so' liga o modo de atendimento se o nome
+              # contiver "-qs-", "-qs.exe" ou "_qs.exe"
+              # (libs/portable/src/main.rs e src/core_main.rs).
+              atendimento = "-qs-" in nl or nl.endswith("-qs.exe") or nl.endswith("_qs.exe")
               if nl.endswith(".exe"):
-                  files.append({"platform":"windows","arch":arch_of(name),"kind":"exe","name":name,"sha256":sha(name)})
+                  files.append({"platform":"windows","arch":arch_of(name),
+                                "kind":"exe-qs" if atendimento else "exe",
+                                "name":name,"sha256":sha(name)})
               elif nl.endswith(".msi"):
                   files.append({"platform":"windows","arch":arch_of(name),"kind":"msi","name":name,"sha256":sha(name)})
               elif nl.endswith(".dmg"):
