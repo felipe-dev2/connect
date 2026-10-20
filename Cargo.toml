@@ -1,6 +1,6 @@
 [package]
 name = "rustdesk"
-version = "1.4.9"
+version = "1.4.10"
 authors = ["PCNET-IT <suporte@pcnet-it.com.br>"]
 edition = "2021"
 build= "build.rs"
