@@ -42,6 +42,22 @@ def get_deb_extra_depends() -> str:
         return ", libatomic1"
     return ""
 
+def pcnet_dart_defines():
+    """PCNET-IT: --dart-define extra, vindos do ambiente.
+
+    Serve para construir a variante do TECNICO (PCNET_PORTAO_JANELA=true, que
+    poe a tela de entrada mal se abre o programa) sem bifurcar este ficheiro nem
+    a receita de CI. Vazio por omissao: a build normal sai exactamente como
+    antes. Exemplo:
+        PCNET_DART_DEFINES="--dart-define=PCNET_PORTAO_JANELA=true"
+    """
+    v = os.environ.get('PCNET_DART_DEFINES', '').strip()
+    if not v:
+        return ''
+    print('PCNET-IT: dart-defines =', v)
+    return ' ' + v
+
+
 def system2(cmd):
     exit_code = os.system(cmd)
     if exit_code != 0:
@@ -419,7 +435,8 @@ def build_flutter_dmg(version, features):
     # FLUTTER_XCODE_* env vars are forwarded to xcodebuild as build settings.
     mac_arch = 'arm64' if platform.machine().lower() in ('arm64', 'aarch64') else 'x86_64'
     system2(
-        f'FLUTTER_XCODE_ARCHS={mac_arch} FLUTTER_XCODE_ONLY_ACTIVE_ARCH=YES flutter build macos --release')
+        f'FLUTTER_XCODE_ARCHS={mac_arch} FLUTTER_XCODE_ONLY_ACTIVE_ARCH=YES flutter build macos --release'
+        + pcnet_dart_defines())
     # bundle name comes from PRODUCT_NAME in flutter/macos/Runner/Configs/AppInfo.xcconfig
     app_path = f'./build/macos/Build/Products/Release/{mac_app_name}'
     system2(f'cp -rf ../target/release/service "{app_path}/Contents/MacOS/"')
@@ -460,7 +477,7 @@ def build_flutter_windows(version, features, skip_portable_pack):
             print("cargo build failed, please check rust source code.")
             exit(-1)
     os.chdir('flutter')
-    system2('flutter build windows --release')
+    system2('flutter build windows --release' + pcnet_dart_defines())
     os.chdir('..')
     shutil.copy2('target/release/deps/dylib_virtual_display.dll',
                  flutter_build_dir_2)

@@ -15,6 +15,13 @@ on:
       macos_only:
         type: boolean
         default: false
+      # PCNET-IT: --dart-define extra para as builds de desktop. Vazio = build
+      # normal, byte a byte igual a de hoje. A build do TECNICO passa
+      # PCNET_PORTAO_JANELA=true, que poe a tela de entrada mal se abre o
+      # programa (ver flutter/lib/common/widgets/portao_acesso.dart).
+      dart-defines:
+        type: string
+        default: ""
 
 # NOTE: F-Droid builder script 'flutter/build_fdroid.sh' reads environment
 # variables from this workflow!
@@ -262,6 +269,8 @@ jobs:
         run: echo "SODIUM_LIB_DIR=$VCPKG_ROOT/installed/${{ matrix.job.vcpkg-triplet }}/lib" >> "$GITHUB_ENV"
 
       - name: Build rustdesk
+        env:
+          PCNET_DART_DEFINES: ${{ inputs.dart-defines }}
         run: |
           # Windows: build RustDesk
           # --hwcodec is shared by all Windows targets; per-target extras (e.g. --vram) come from the matrix
@@ -826,6 +835,8 @@ jobs:
           rustc -V
 
       - name: Build rustdesk
+        env:
+          PCNET_DART_DEFINES: ${{ inputs.dart-defines }}
         run: |
           if [ "${{ matrix.job.target }}" = "aarch64-apple-darwin" ]; then
             MIN_MACOS_VERSION="12.3"

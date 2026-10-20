@@ -1,0 +1,43 @@
+# PCNET-IT: build da app do TECNICO.
+#
+# E' a mesma app, com UMA diferenca: PCNET_PORTAO_JANELA=true, que faz a janela
+# principal nao abrir sem sessao valida no console. O tecnico ve a tela de
+# entrada mal abre o programa; se a conta estiver desativada, le' o motivo em
+# vez de ficar sem perceber porque nao liga.
+# Ver flutter/lib/common/widgets/portao_acesso.dart.
+#
+# PORQUE E' UMA TAG SEPARADA, E NAO A "nightly"
+# O /opt/pcnet-update/sync.sh do console consome a tag "nightly" de 10 em 10
+# minutos e serve o que la' estiver em /update/. Publicar a build do tecnico
+# nessa tag poria o portao da janela no instalador que QUALQUER pessoa baixa --
+# incluindo quem instala numa maquina de CLIENTE, que nao tem conta nenhuma e
+# ficaria trancada fora do programa. Com tag propria, esta build so chega a quem
+# for busca-la de proposito.
+#
+# COMO SE USA
+#   Actions -> "PCNET-IT: build do tecnico" -> Run workflow.
+#   Os instaladores saem no release com a tag "tecnico".
+name: "PCNET-IT: build do tecnico"
+
+on:
+  workflow_dispatch:
+    inputs:
+      windows_only:
+        description: "So Windows (mais rapido, ~25 min)"
+        type: boolean
+        default: false
+      macos_only:
+        description: "So macOS"
+        type: boolean
+        default: false
+
+jobs:
+  build-tecnico:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: "tecnico"
+      windows_only: ${{ inputs.windows_only }}
+      macos_only: ${{ inputs.macos_only }}
+      dart-defines: "--dart-define=PCNET_PORTAO_JANELA=true"
