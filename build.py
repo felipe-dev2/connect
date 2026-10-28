@@ -170,6 +170,12 @@ def make_parser():
             action='store_true',
             help='Enable feature screencapturekit'
         )
+    parser.add_argument(
+        '--pcnet-qs-lib',
+        action='store_true',
+        help='PCNET-IT: so compila a biblioteca da variante de atendimento '
+             '(as features normais + pcnet-qs) e sai. Windows e macOS.'
+    )
     return parser
 
 
@@ -470,6 +476,39 @@ def build_flutter_arch_manjaro(version, features):
     system2('HBB=`pwd`/.. FLUTTER=1 makepkg -f')
 
 
+def pcnet_build_qs_lib(features):
+    """PCNET-IT: so a biblioteca da variante de ATENDIMENTO (PCNET-IT Assistencia).
+
+    Corre DEPOIS da build normal, no mesmo job da CI, com as MESMAS features de
+    get_features() mais pcnet-qs (liga conn-type=incoming em src/common.rs,
+    load_custom_client). Assim a lista de features nao se duplica no YAML e as
+    duas variantes nunca divergem nela. So o crate principal recompila; as
+    dependencias vem da cache.
+
+    Sobrescreve a biblioteca em target/release/, por isso tem de correr depois
+    de a build normal ja a ter copiado para o pacote (./rustdesk no Windows, o
+    .app no macOS). A interface Flutter e' a mesma nas duas variantes: decide em
+    runtime por bind.isIncomingOnly().
+    """
+    features = f'{features},pcnet-qs' if features else 'pcnet-qs'
+    if windows:
+        system2(f'cargo build --locked --features {features} --lib --release')
+        out = 'target/release/librustdesk.dll'
+    elif osx:
+        # mesma linha da build normal (build_flutter_dmg): a CI reescreve o
+        # MACOSX_DEPLOYMENT_TARGET deste ficheiro por sed, e apanha esta tambem.
+        system2(
+            f'MACOSX_DEPLOYMENT_TARGET=10.14 cargo build --locked --features {features} --lib --release')
+        out = 'target/release/liblibrustdesk.dylib'
+    else:
+        print('PCNET-IT: --pcnet-qs-lib so existe para Windows e macOS')
+        sys.exit(-1)
+    if not os.path.exists(out):
+        print(f'PCNET-IT: {out} nao foi gerada')
+        sys.exit(-1)
+    print('PCNET-IT: biblioteca de atendimento em', os.path.abspath(out))
+
+
 def build_flutter_windows(version, features, skip_portable_pack):
     if not skip_cargo:
         system2(f'cargo build --locked --features {features} --lib --release')
@@ -505,6 +544,12 @@ def main():
     global skip_cargo
     parser = make_parser()
     args = parser.parse_args()
+
+    # PCNET-IT: antes de tudo o resto -- nao apagar binarios da build normal,
+    # nao recompilar o virtual display, nao tocar no Flutter.
+    if args.pcnet_qs_lib:
+        pcnet_build_qs_lib(','.join(get_features(args)))
+        return
 
     if os.path.exists(exe_path):
         os.unlink(exe_path)
