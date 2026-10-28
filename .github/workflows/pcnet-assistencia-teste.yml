@@ -1,0 +1,47 @@
+# PCNET-IT: build de TESTE da variante de atendimento ("PCNET-IT Assistencia").
+#
+# E' a build normal MAIS a variante: o portatil
+# PCNET-IT-Assistencia-qs-<versao>-x86_64.exe e os dois
+# PCNET-IT-Assistencia-qs-<versao>-<arch>.dmg (feature pcnet-qs:
+# conn-type=incoming -- so o cartao do ID e da senha, nunca liga para fora).
+#
+# PORQUE E' UMA TAG SEPARADA, E NAO A "nightly"
+# O /opt/pcnet-update/sync.sh do console consome a tag "nightly" de 10 em 10
+# minutos e serve o que la' estiver em /update/. A pagina publica
+# (propostas/cliente-final.html) prefere a variante de atendimento sozinha
+# mal ela apareca no manifesto -- publicar isto na nightly punha-a nas maos
+# dos clientes antes de alguem a ter visto a funcionar. Com tag propria, so
+# chega a quem for busca-la de proposito.
+#
+# Tambem NAO leva o dart-define do portao da janela (pcnet-tecnico.yml): o
+# cliente final nao tem conta no console e ficaria trancado fora.
+#
+# COMO SE USA
+#   Actions -> "PCNET-IT: teste da Assistencia" -> Run workflow.
+#   Os ficheiros saem no release com a tag "assistencia-teste".
+#   Depois de aprovada num Windows e num Mac de verdade, liga-se
+#   pcnet-assistencia: true no flutter-nightly.yml.
+name: "PCNET-IT: teste da Assistencia"
+
+on:
+  workflow_dispatch:
+    inputs:
+      windows_only:
+        description: "So Windows (mais rapido, ~25 min)"
+        type: boolean
+        default: false
+      macos_only:
+        description: "So macOS"
+        type: boolean
+        default: false
+
+jobs:
+  build-assistencia-teste:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: "assistencia-teste"
+      windows_only: ${{ inputs.windows_only }}
+      macos_only: ${{ inputs.macos_only }}
+      pcnet-assistencia: true
