@@ -40,6 +40,11 @@ unix-file-copy-paste = [
     "clipboard/unix-file-copy-paste",
 ]
 screencapturekit = ["cpal/screencapturekit"]
+# PCNET-IT: variante de ATENDIMENTO ("PCNET-IT Assistencia"). Liga
+# conn-type=incoming em src/common.rs (load_custom_client): so recebe acesso,
+# nunca liga para fora. Feature e nao variavel de ambiente porque entra na
+# impressao digital do cargo -- nao ha risco de a cache devolver a lib errada.
+pcnet-qs = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

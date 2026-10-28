@@ -2093,6 +2093,22 @@ pub fn load_custom_client() {
         .unwrap()
         .insert("api-server".to_string(), "http://connect.pcnet-it.com:82".to_string());
 
+    // PCNET-IT: variante de ATENDIMENTO ("PCNET-IT Assistencia", build com
+    // --features pcnet-qs). conn-type=incoming e' o modo "so recebe" que o fork
+    // ja' traz completo: a interface fica so com o cartao do ID e da senha e o
+    // nucleo recusa qualquer ligacao de saida (client.rs: "Incoming only mode").
+    // HARD_SETTINGS nao se altera pela interface; o unico outro escritor e' o
+    // custom.txt assinado pela RustDesk (read_custom_client), que nao usamos.
+    // O APP_NAME NAO muda: pipes de IPC, pasta de configuracao e LaunchAgents
+    // dependem dele. O nome "PCNET-IT Assistencia" e' so o que a interface mostra.
+    #[cfg(feature = "pcnet-qs")]
+    {
+        config::HARD_SETTINGS
+            .write()
+            .unwrap()
+            .insert("conn-type".to_string(), "incoming".to_string());
+    }
+
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
