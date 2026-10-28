@@ -22,6 +22,16 @@ on:
       dart-defines:
         type: string
         default: ""
+      # PCNET-IT: gera tambem a variante de ATENDIMENTO ("PCNET-IT Assistencia"):
+      # o portatil .exe e os .dmg com a feature pcnet-qs. DESLIGADO por omissao,
+      # de proposito: a nightly e' o que o /opt/pcnet-update/sync.sh do console
+      # serve em /update/, e a pagina publica (cliente-final.html) passa a
+      # entregar a variante sozinha mal ela apareca no manifesto. So o workflow
+      # de teste (pcnet-assistencia-teste.yml, tag propria) a liga, ate' ela ser
+      # aprovada num Windows e num Mac de verdade.
+      pcnet-assistencia:
+        type: boolean
+        default: false
 
 # NOTE: F-Droid builder script 'flutter/build_fdroid.sh' reads environment
 # variables from this workflow!
@@ -63,6 +73,7 @@ env:
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
   MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
   UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
+  PCNET_ASSISTENCIA: "${{ inputs.pcnet-assistencia }}"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}-2"
 
 jobs:
@@ -360,6 +371,38 @@ jobs:
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/PCNET-IT-Connect-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
+      # PCNET-IT: variante de ATENDIMENTO ("PCNET-IT Assistencia"), so com o input
+      # pcnet-assistencia. A interface Flutter e' a mesma; muda so a
+      # librustdesk.dll (feature pcnet-qs, conn-type=incoming). O exe do Flutter
+      # carrega a dll em runtime (flutter/windows/runner/main.cpp, LoadLibraryA),
+      # por isso basta trocar a dll numa COPIA de ./rustdesk e empacotar outra
+      # vez. ./rustdesk fica intacta: o MSI, a seguir, sai dela.
+      # Mesma shell e mesmos args do passo "Build rustdesk", para o cargo
+      # reaproveitar a cache e recompilar so o crate principal.
+      - name: PCNET-IT Assistencia - biblioteca de atendimento
+        if: env.UPLOAD_ARTIFACT == 'true' && env.PCNET_ASSISTENCIA == 'true'
+        run: |
+          python3 .\build.py --pcnet-qs-lib --flutter --hwcodec ${{ matrix.job.build-args }}
+
+      # Sai SO como portatil: e' atendimento, fechar o programa acaba o acesso.
+      # Sem MSI, sem servico e sem auto-update (start_auto_update() so corre com
+      # o programa instalado, rendezvous_mediator.rs). O "-qs-" no nome e'
+      # obrigatorio: e' o que faz o empacotador passar --quick_support
+      # (libs/portable/src/main.rs) e o que da' ao ficheiro o kind "exe-qs" no
+      # manifesto, que o updater nunca escolhe.
+      - name: PCNET-IT Assistencia - portatil de atendimento
+        if: env.UPLOAD_ARTIFACT == 'true' && env.PCNET_ASSISTENCIA == 'true'
+        shell: bash
+        run: |
+          rm -rf ./rustdesk-qs
+          cp -r ./rustdesk ./rustdesk-qs
+          cp -f ./target/release/librustdesk.dll ./rustdesk-qs/librustdesk.dll
+          pushd ./libs/portable
+          python3 ./generate.py -f ../../rustdesk-qs/ -o . -e ../../rustdesk-qs/PCNET-IT-Connect.exe
+          popd
+          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/PCNET-IT-Assistencia-qs-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          ls -la ./SignOutput
+
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
 
@@ -393,6 +436,7 @@ jobs:
           files: |
             ./SignOutput/PCNET-IT-Connect-*.msi
             ./SignOutput/PCNET-IT-Connect-*.exe
+            ./SignOutput/PCNET-IT-Assistencia-*.exe
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
   #
@@ -888,6 +932,63 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             PCNET-IT-Connect-${{ env.VERSION }}-${{ matrix.job.arch }}.dmg
+
+      # PCNET-IT: variante de ATENDIMENTO ("PCNET-IT Assistencia") no macOS, so com
+      # o input pcnet-assistencia. Fica no FIM do job de proposito: o passo de
+      # assinatura com Developer ID, acima, apaga *.dmg da raiz.
+      #
+      # Copia o .app da build normal e:
+      #  . troca a liblibrustdesk.dylib embutida (Contents/Frameworks, a fase
+      #    "Embed Libraries" do Runner.xcodeproj) pela compilada com pcnet-qs;
+      #  . muda o nome e o bundle id. Bundle id proprio separa as permissoes do
+      #    macOS (Gravacao de Ecra, Acessibilidade) das da app do tecnico. No Rust
+      #    o bundle id so serve para os plists do daemon (platform/macos.rs,
+      #    correct_app_name), que esta variante nao instala;
+      #  . tira o esquema de URL pcnet-it-connect://, que so a app do tecnico
+      #    deve atender (a variante nunca liga para fora);
+      #  . volta a selar ad-hoc como o build.py faz. Sem isto o macOS recusa
+      #    abrir ("is damaged and can't be opened").
+      # O create-dmg ja' foi remendado (MAXIMUM_UNMOUNTING_ATTEMPTS) no passo
+      # "create unsigned dmg", que corre sempre que este corre.
+      - name: PCNET-IT Assistencia - dmg de atendimento
+        if: env.UPLOAD_ARTIFACT == 'true' && env.PCNET_ASSISTENCIA == 'true'
+        run: |
+          set -euo pipefail
+          ./build.py --pcnet-qs-lib --flutter --hwcodec --unix-file-copy-paste ${{ matrix.job.extra-build-args }}
+          ORIG=./flutter/build/macos/Build/Products/Release/PCNET-IT-Connect.app
+          QS_DIR=./pcnet-assistencia
+          QS_APP="$QS_DIR/PCNET-IT Assistência.app"
+          rm -rf "$QS_DIR" && mkdir -p "$QS_DIR"
+          ditto "$ORIG" "$QS_APP"
+          DYLIB="$QS_APP/Contents/Frameworks/liblibrustdesk.dylib"
+          if [ ! -f "$DYLIB" ]; then
+            echo "liblibrustdesk.dylib nao esta em Contents/Frameworks:"
+            find "$QS_APP" -name '*rustdesk*.dylib'
+            exit 1
+          fi
+          cp -f ./target/release/liblibrustdesk.dylib "$DYLIB"
+          PLIST="$QS_APP/Contents/Info.plist"
+          plutil -replace CFBundleName -string "PCNET-IT Assistência" "$PLIST"
+          plutil -replace CFBundleDisplayName -string "PCNET-IT Assistência" "$PLIST"
+          plutil -replace CFBundleIdentifier -string br.com.pcnetit.assistencia "$PLIST"
+          plutil -remove CFBundleURLTypes "$PLIST" || true
+          codesign --force --options runtime -s - "$DYLIB"
+          codesign --force --options runtime \
+            --entitlements flutter/macos/Runner/Release.entitlements -s - "$QS_APP"
+          codesign --verify --strict -vvv "$QS_APP"
+          create-dmg --volname "PCNET-IT Assistência" \
+            --icon "PCNET-IT Assistência.app" 200 190 --hide-extension "PCNET-IT Assistência.app" \
+            --window-size 800 400 --app-drop-link 600 185 \
+            PCNET-IT-Assistencia-qs-${{ env.VERSION }}-${{ matrix.job.arch }}.dmg "$QS_APP"
+
+      - name: PCNET-IT Assistencia - publicar dmg
+        if: env.UPLOAD_ARTIFACT == 'true' && env.PCNET_ASSISTENCIA == 'true'
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            PCNET-IT-Assistencia-qs-${{ env.VERSION }}-${{ matrix.job.arch }}.dmg
 
   publish_unsigned:
     needs:
