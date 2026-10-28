@@ -3083,8 +3083,19 @@ int versionCmp(String v1, String v2) {
   return bind.versionToNumber(v: v1) - bind.versionToNumber(v: v2);
 }
 
+// PCNET-IT: o nome que o cliente VE na variante de atendimento (build com a
+// feature pcnet-qs, que liga conn-type=incoming no Rust). So a interface muda:
+// o APP_NAME do Rust continua "PCNET-IT-Connect", porque e' dele que dependem
+// os pipes de IPC, a pasta de configuracao e os LaunchAgents. A pagina publica
+// (propostas/cliente-final.html, PRODUTO) escreve este mesmo nome nos passos,
+// e a cliente compara os dois: mudar um obriga a mudar o outro.
+const String kPcnetNomeAssistencia = 'PCNET-IT Assistência';
+
+String pcnetNomeVisivel() =>
+    bind.isIncomingOnly() ? kPcnetNomeAssistencia : bind.mainGetAppNameSync();
+
 String getWindowName({WindowType? overrideType}) {
-  final name = bind.mainGetAppNameSync();
+  final name = pcnetNomeVisivel();
   switch (overrideType ?? kWindowType) {
     case WindowType.Main:
       return name;

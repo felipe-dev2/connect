@@ -176,7 +176,7 @@ class _PcnetSplashState extends State<_PcnetSplash> {
                       loadIcon(120),
                       const SizedBox(height: 20),
                       Text(
-                        bind.mainGetAppNameSync(),
+                        pcnetNomeVisivel(),
                         style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,

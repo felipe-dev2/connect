@@ -641,7 +641,7 @@ class _DesktopTabState extends State<DesktopTab>
                         Offstage(
                             offstage: !showTitle,
                             child: Text(
-                              bind.mainGetAppNameSync(),
+                              pcnetNomeVisivel(),
                               style: const TextStyle(
                                   fontSize: 12, fontWeight: FontWeight.w600),
                             ).marginOnly(left: 6))

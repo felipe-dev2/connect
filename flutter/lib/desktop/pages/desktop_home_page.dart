@@ -250,7 +250,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ],
                 ),
               ),
-              buildPopupMenu(context),
+              // PCNET-IT: na variante de atendimento o cliente nao chega as
+              // Definicoes. Sem isto o botao abria-as inteiras (Geral, Servico,
+              // Sobre) e a janela de 300 px passava a 768x600 redimensionavel
+              // (desktop_tab_page.dart, onSelected do incoming-only).
+              if (!bind.isIncomingOnly()) buildPopupMenu(context),
             ],
           ),
           const SizedBox(height: 16),
@@ -419,7 +423,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 ),
                 onHover: (value) => refreshHover.value = value,
               ).marginOnly(right: 6),
-            if (!bind.isDisableSettings())
+            // PCNET-IT: idem para o lapis, que salta para Definicoes > Seguranca.
+            if (!bind.isDisableSettings() && !bind.isIncomingOnly())
               InkWell(
                 child: Tooltip(
                   message: translate('Change Password'),
@@ -515,7 +520,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       return buildInstallCard("", systemError, "", () {});
     }
 
-    if (isWindows && !bind.isDisableInstallation()) {
+    // PCNET-IT: a variante de atendimento e' portatil por desenho -- fechar o
+    // programa acaba o acesso, e e' isso que a pagina publica promete ao
+    // cliente. Instalar daria acesso permanente, por isso o cartao "Instalar"
+    // (e o de "versao inferior") nao aparece nela. Cai no botao "Sair" do
+    // fim desta funcao.
+    if (isWindows && !bind.isDisableInstallation() && !bind.isIncomingOnly()) {
       if (!bind.mainIsInstalled()) {
         return buildInstallCard(
             "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
@@ -543,6 +553,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           _openMacPermissions();
         }, help: 'Help', link: translate("doc_mac_permission"));
       } else if (!isOutgoingOnly &&
+          // PCNET-IT: sem o servico (daemon) na variante de atendimento; ver
+          // o comentario do Windows acima. O painel das permissoes, logo
+          // acima, continua: sem Gravacao de Ecra o tecnico ve preto.
+          !bind.isIncomingOnly() &&
           !svcStopped.value &&
           bind.mainIsInstalled() &&
           !bind.mainIsInstalledDaemon(prompt: false)) {
