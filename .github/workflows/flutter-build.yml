@@ -1053,6 +1053,8 @@ jobs:
             --pattern "PCNET-IT-Connect-*.exe" \
             --pattern "PCNET-IT-Connect-*.msi" \
             --pattern "PCNET-IT-Connect-*.dmg" \
+            --pattern "PCNET-IT-Assistencia-*.exe" \
+            --pattern "PCNET-IT-Assistencia-*.dmg" \
             --dir . --clobber || true
           ls -la
 
@@ -1080,7 +1082,9 @@ jobs:
               return "x86_64"
           files = []
           for name in sorted(os.listdir(".")):
-              if not name.startswith("PCNET-IT-Connect-"): continue
+              # PCNET-IT: PCNET-IT-Assistencia-* e' a variante de atendimento
+              # (so existe quando o workflow liga o input pcnet-assistencia).
+              if not name.startswith(("PCNET-IT-Connect-", "PCNET-IT-Assistencia-")): continue
               nl = name.lower()
               if "sciter" in nl: continue
               # PCNET-IT: a variante de ATENDIMENTO (o que o cliente final baixa)
@@ -1102,7 +1106,13 @@ jobs:
               elif nl.endswith(".msi"):
                   files.append({"platform":"windows","arch":arch_of(name),"kind":"msi","name":name,"sha256":sha(name)})
               elif nl.endswith(".dmg"):
-                  files.append({"platform":"macos","arch":arch_of(name),"kind":"dmg","name":name,"sha256":sha(name)})
+                  # mesmo raciocinio do exe: kind proprio para o dmg de
+                  # atendimento. No macOS nao ha auto-update, mas o
+                  # instalar-macos.sh do console escolhe por kind == "dmg" e a
+                  # pagina publica reconhece o "-qs" (SUFIXOS_VISITA).
+                  files.append({"platform":"macos","arch":arch_of(name),
+                                "kind":"dmg-qs" if atendimento else "dmg",
+                                "name":name,"sha256":sha(name)})
           if not files:
               raise SystemExit("Nenhum instalador PCNET-IT-Connect encontrado no release")
           manifest = {"version": VERSION, "files": files}
