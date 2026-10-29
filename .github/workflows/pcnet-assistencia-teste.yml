@@ -24,6 +24,12 @@
 name: "PCNET-IT: teste da Assistencia"
 
 on:
+  # push no proprio branch: o GitHub so deixa disparar a mao (workflow_dispatch)
+  # um workflow que ja exista no main, e este so existe no branch. No push vale
+  # a versao do workflow do proprio commit, por isso funciona sem tocar no main.
+  push:
+    branches:
+      - pcnet/assistencia
   workflow_dispatch:
     inputs:
       windows_only:
@@ -42,6 +48,6 @@ jobs:
     with:
       upload-artifact: true
       upload-tag: "assistencia-teste"
-      windows_only: ${{ inputs.windows_only }}
-      macos_only: ${{ inputs.macos_only }}
+      windows_only: ${{ inputs.windows_only == true }}
+      macos_only: ${{ inputs.macos_only == true }}
       pcnet-assistencia: true
