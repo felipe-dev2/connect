@@ -143,6 +143,17 @@ pub fn core_main() -> Option<Vec<String>> {
             && (is_quick_support_exe(&arg_exe)
                 || config::LocalConfig::get_option("pre-elevate-service") == "Y"
                 || (!click_setup && crate::platform::is_elevated(None).unwrap_or(false)));
+        // PCNET-IT: a Assistencia (feature pcnet-qs) nao pre-eleva. O nome com
+        // "-qs-" (e o --quick_support que o packer passa por causa dele) arrancava
+        // o portable service elevado logo ao abrir: um UAC a cada execucao, que o
+        // utilizador de dominio, sem admin, nao consegue passar. Sem isto a sessao
+        // corre como o utilizador; se o tecnico precisar de admin, usa "Pedir
+        // Elevacao" na sessao. Quem ja abriu como administrador continua a ter o
+        // portable service, porque ai nao ha UAC nenhum a mais.
+        #[cfg(feature = "pcnet-qs")]
+        if !crate::platform::is_elevated(None).unwrap_or(false) {
+            _is_quick_support = false;
+        }
         crate::portable_service::client::set_quick_support(_is_quick_support);
     }
     let mut log_name = "".to_owned();
